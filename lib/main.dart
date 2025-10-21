@@ -20,6 +20,7 @@ void main() async {
   Get.put(LoginController());
   Get.put(HomeController());
   Get.put(ChatController());
+  Get.put(CustomMenuController());
 
   configLoading();
   runApp(const MainApp());

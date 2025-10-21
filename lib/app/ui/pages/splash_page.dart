@@ -250,31 +250,42 @@ class _MySplashPageState extends State<MySplashPage>
                 ),
 
                 Padding(
-                  padding: EdgeInsets.only(
-                    left: Get.width * 0.08,
-                    right: Get.width * 0.08,
-                    top: Get.width * 0.04,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Get.width * 0.1,
+                    vertical: Get.height * 0.02,
                   ),
-                  child: CheckboxListTile(
-                    title: Text(
-                      'Não mostrar esta tela novamente',
-                      style: Get.textTheme.bodyMedium!.copyWith(
-                        color: CustomColors.witheColor,
-                        fontSize: 14,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          activeThumbColor: CustomColors.primaryDarkerColor,
+                          value: splashController.preferences.skipSplash,
+                          onChanged: (value) {
+                            setState(() {
+                              splashController.preferences.skipSplash = value;
+                            });
+                          },
+                        ),
                       ),
-                    ),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    checkboxShape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    activeColor: CustomColors.primaryDarkerColor,
-                    value: splashController.preferences.skipSplash,
-                    onChanged: (value) {
-                      setState(
-                        () => splashController.preferences.skipSplash =
-                            value ?? false,
-                      );
-                    },
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            splashController.preferences.skipSplash =
+                                !splashController.preferences.skipSplash;
+                          });
+                        },
+                        child: Text(
+                          'Não mostrar esta tela novamente',
+                          style: Get.textTheme.bodyMedium!.copyWith(
+                            color: CustomColors.witheColor,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

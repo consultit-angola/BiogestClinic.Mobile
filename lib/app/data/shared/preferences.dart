@@ -69,6 +69,14 @@ class Preferences {
     _prefs?.setString('expire', value);
   }
 
+  int get userID {
+    return _prefs?.getInt('userID') ?? -1;
+  }
+
+  set userID(int value) {
+    _prefs?.setInt('userID', value);
+  }
+
   String get username {
     return _prefs?.getString('username') ?? '';
   }

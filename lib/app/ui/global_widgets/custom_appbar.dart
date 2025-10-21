@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
+import '../../controllers/index.dart';
 import '../index.dart';
 
-Widget customAppbar() {
+Widget customAppbar({showSettings = false}) {
   return Stack(
     children: [
       Container(
@@ -22,16 +23,57 @@ Widget customAppbar() {
           ],
         ),
         child: Padding(
-          padding: EdgeInsetsGeometry.only(
-            top: Get.height * 0.025,
-            left: Get.width * 0.12,
-          ),
-          child: Text(
-            'myBio',
-            style: Get.textTheme.headlineMedium!.copyWith(
-              color: CustomColors.witheColor,
-              fontWeight: FontWeight.bold,
-            ),
+          padding: EdgeInsetsGeometry.symmetric(horizontal: Get.width * 0.1),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'myBio',
+                style: Get.textTheme.headlineMedium!.copyWith(
+                  color: CustomColors.witheColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              showSettings
+                  ? GestureDetector(
+                      onTapDown: (TapDownDetails details) {
+                        showMenu(
+                          context: Get.context!,
+                          position: RelativeRect.fromLTRB(
+                            details.globalPosition.dx,
+                            details.globalPosition.dy,
+                            0,
+                            0,
+                          ),
+                          items: [
+                            PopupMenuItem(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.logout_rounded),
+                                  SizedBox(width: Get.width * 0.02),
+                                  Text('Sair'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ).then((value) {
+                          switch (value) {
+                            case 'logout':
+                              GlobalController.to.logout();
+                              break;
+                            default:
+                          }
+                        });
+                      },
+                      child: Icon(
+                        Icons.settings,
+                        color: CustomColors.witheColor,
+                        size: Get.width * 0.08,
+                      ),
+                    )
+                  : SizedBox.shrink(),
+            ],
           ),
         ),
       ),

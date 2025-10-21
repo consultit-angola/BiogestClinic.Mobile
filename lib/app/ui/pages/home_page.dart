@@ -24,7 +24,7 @@ class HomePage extends GetView<HomeController> {
             ),
             Stack(
               children: [
-                Column(children: [customAppbar(), doctors()]),
+                Column(children: [customAppbar(showSettings: true), doctors()]),
                 menu(),
               ],
             ),
