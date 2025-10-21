@@ -22,6 +22,8 @@ void main() async {
   Get.put(ChatController());
   Get.put(CustomMenuController());
   Get.put(AlarmeController());
+  Get.put(CalendarController());
+  Get.put(ActivitiesController());
 
   configLoading();
   runApp(const MainApp());

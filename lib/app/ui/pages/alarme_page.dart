@@ -1,8 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-
 import '../../controllers/index.dart';
-import '../../routes/index.dart';
 import '../index.dart';
 
 class AlarmePage extends GetView<AlarmeController> {
@@ -11,7 +9,7 @@ class AlarmePage extends GetView<AlarmeController> {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<AlarmeController>(
-      builder: (chatController) => Scaffold(
+      builder: (alarmeController) => Scaffold(
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [
@@ -23,7 +21,12 @@ class AlarmePage extends GetView<AlarmeController> {
             ),
             Stack(
               children: [
-                Column(children: [customAppbar(), notificationList()]),
+                Column(
+                  children: [
+                    customAppbar(),
+                    Expanded(child: notificationList()),
+                  ],
+                ),
                 customMenu(),
               ],
             ),
@@ -34,59 +37,27 @@ class AlarmePage extends GetView<AlarmeController> {
   }
 
   Widget notificationList() {
-    return Expanded(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          contact(
-            title: 'Maria Silva',
-            subtitle: 'Ola como posso ajudar?',
-            time: '10:30 AM',
-            userID: 1,
-          ),
-          contact(
-            title: 'João Pereira',
-            subtitle:
-                'Preciso marcar uma consulta esto es para aumentar el tamano del texto y ver como se comporta en la interfaz de usuario.',
-            time: 'Ontem',
-            userID: 2,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget contact({
-    required String title,
-    required String subtitle,
-    required String time,
-    required int userID,
-  }) {
-    return ListTile(
-      leading: CircleAvatar(
-        radius: Get.width * 0.066,
-        backgroundColor: Colors.black12,
-        child: CircleAvatar(
-          radius: Get.width * 0.06,
-          backgroundColor: CustomColors.secondaryColor,
-          child: Icon(
-            Icons.person_rounded,
-            size: Get.width * 0.1,
-            color: CustomColors.witheColor,
-          ),
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        search(),
+        NotificationItem(
+          date: '10/10/2025',
+          title: 'Lote MRET 1 caducado',
+          subtitle: 'O lote MRET 1 caducou no dia 10/10/2025, favor verificar.',
         ),
-      ),
-      title: Text(title),
-      subtitle: Text(
-        subtitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        softWrap: false,
-      ),
-      onTap: () {
-        Get.toNamed(Routes.chatDetails, arguments: {'userID': userID});
-      },
-      trailing: Text(time),
+        NotificationItem(
+          date: '09/10/2025',
+          title: 'Consulta cancelada',
+          subtitle:
+              'A consulta agendada para o dia 12/10/2025 foi cancelada pelo cliente.',
+        ),
+        NotificationItem(
+          date: '10/10/2025',
+          title: 'Produto para encomenda chegou',
+          subtitle: 'O produto solicitado para encomenda chegou ao estoque.',
+        ),
+      ],
     );
   }
 
@@ -107,7 +78,7 @@ class AlarmePage extends GetView<AlarmeController> {
         ),
         child: TextField(
           decoration: InputDecoration(
-            hintText: 'Pesquisar contatos',
+            hintText: 'Pesquisar notificações',
             prefixIcon: const Icon(Icons.search),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -116,5 +87,113 @@ class AlarmePage extends GetView<AlarmeController> {
         ),
       ),
     );
+  }
+}
+
+class NotificationItem extends StatefulWidget {
+  final String date;
+  final String title;
+  final String subtitle;
+
+  const NotificationItem({
+    super.key,
+    required this.date,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  State<NotificationItem> createState() => _NotificationItemState();
+}
+
+class _NotificationItemState extends State<NotificationItem> {
+  bool expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: toggleExpanded,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        width: Get.width * 0.9,
+        margin: EdgeInsets.symmetric(
+          horizontal: Get.width * 0.05,
+          vertical: Get.height * 0.01,
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: Get.width * 0.04,
+          vertical: Get.height * 0.015,
+        ),
+        decoration: BoxDecoration(
+          color: CustomColors.secondaryColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  widget.date,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: CustomColors.witheColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: TextStyle(
+                      color: CustomColors.witheColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                ExpandIcon(
+                  onPressed: (value) => toggleExpanded(),
+                  color: CustomColors.witheColor,
+                  isExpanded: expanded,
+                ),
+              ],
+            ),
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Padding(
+                padding: EdgeInsets.only(top: Get.height * 0.015),
+                child: Text(
+                  widget.subtitle,
+                  style: TextStyle(
+                    color: CustomColors.witheColor.withValues(alpha: 0.9),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              crossFadeState: expanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 300),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void toggleExpanded() {
+    setState(() {
+      expanded = !expanded;
+    });
   }
 }

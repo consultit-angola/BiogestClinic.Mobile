@@ -21,8 +21,6 @@ class ChatController extends GetxController {
     groupName: 'Users',
   ).obs;
 
-  Future init(BuildContext context) async {}
-
   void sendMessage() {
     final text = inputController.text.trim();
     if (text.isEmpty) return;
