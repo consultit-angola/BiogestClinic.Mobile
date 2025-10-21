@@ -21,10 +21,11 @@ abstract class AppPages {
       page: () => const ChatPage(),
       binding: ChatBinding(),
     ),
-    // GetPage(
-    //     name: Routes.userRegister,
-    //     page: () => const UserRegisterPage(),
-    //     binding: UserRegisterBinding()),
+    GetPage(
+      name: Routes.chatDetails,
+      page: () => const ChatDetailsPage(),
+      binding: ChatBinding(),
+    ),
     // GetPage(
     //     name: Routes.driverRegister,
     //     page: () => const DriverRegisterPage(),

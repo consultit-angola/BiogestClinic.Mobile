@@ -1,8 +1,10 @@
+import 'package:biogest_clinic_movile/app/data/shared/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 import '../../controllers/index.dart';
+import '../../routes/index.dart';
 import '../index.dart';
 
 Widget customAppbar({showSettings = false}) {
@@ -47,6 +49,16 @@ Widget customAppbar({showSettings = false}) {
                           ),
                           items: [
                             PopupMenuItem(
+                              value: 'cleanCache',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_sweep_outlined),
+                                  SizedBox(width: Get.width * 0.02),
+                                  Text('Limpar cache'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
                               value: 'logout',
                               child: Row(
                                 children: [
@@ -61,6 +73,16 @@ Widget customAppbar({showSettings = false}) {
                           switch (value) {
                             case 'logout':
                               GlobalController.to.logout();
+                              break;
+                            case 'cleanCache':
+                              Preferences().clear();
+                              Preferences().skipSplash = false;
+
+                              Get.snackbar(
+                                'Sucesso',
+                                'Cache limpo com sucesso',
+                              );
+                              Get.offAllNamed(Routes.splash);
                               break;
                             default:
                           }

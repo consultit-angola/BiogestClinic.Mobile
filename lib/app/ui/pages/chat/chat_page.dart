@@ -5,13 +5,13 @@ import '../../../controllers/index.dart';
 import '../../../routes/index.dart';
 import '../../index.dart';
 
-class ChatPage extends GetView<HomeController> {
+class ChatPage extends GetView<ChatController> {
   const ChatPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<HomeController>(
-      builder: (homeController) => Scaffold(
+    return GetBuilder<ChatController>(
+      builder: (chatController) => Scaffold(
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [

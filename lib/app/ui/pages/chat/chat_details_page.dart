@@ -1,36 +1,30 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:get/get.dart';
 
 import '../../../controllers/index.dart';
-import '../../../routes/index.dart';
+import '../../../data/models/index.dart';
 import '../../index.dart';
 
-class ChatPage extends GetView<HomeController> {
-  const ChatPage({super.key});
+class ChatDetailsPage extends GetView<ChatController> {
+  const ChatDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<HomeController>(
-      builder: (homeController) => Scaffold(
-        resizeToAvoidBottomInset: false,
+    return GetBuilder<ChatController>(
+      builder: (chatController) => Scaffold(
         body: Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    CustomColors.witheColor,
-                    CustomColors.secondaryColor.withValues(alpha: 0.3),
-                  ],
-                ),
-              ),
+            Image.asset(
+              'assets/images/background.png',
+              width: Get.width,
+              height: Get.height,
+              fit: BoxFit.fill,
             ),
+
             Stack(
               children: [
-                Column(children: [customAppbar(), contactList()]),
-                customMenu(),
+                Column(children: [customAppbar(), buttonBack(), chatArea()]),
               ],
             ),
           ],
@@ -39,89 +33,140 @@ class ChatPage extends GetView<HomeController> {
     );
   }
 
-  Widget contactList() {
-    return Expanded(
-      child: ListView(
-        padding: EdgeInsets.zero,
+  buttonBack() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: Get.width * 0.05),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          search(),
-          contact(
-            title: 'Maria Silva',
-            subtitle: 'Ola como posso ajudar?',
-            time: '10:30 AM',
-            userID: 1,
+          BackButton(
+            color: Colors.black,
+            onPressed: () {
+              Get.back();
+            },
           ),
-          contact(
-            title: 'João Pereira',
-            subtitle:
-                'Preciso marcar uma consulta esto es para aumentar el tamano del texto y ver como se comporta en la interfaz de usuario.',
-            time: 'Ontem',
-            userID: 2,
+          Text(
+            controller.user.value.name,
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget contact({
-    required String title,
-    required String subtitle,
-    required String time,
-    required int userID,
-  }) {
-    return ListTile(
-      leading: CircleAvatar(
-        radius: Get.width * 0.066,
-        backgroundColor: Colors.black12,
-        child: CircleAvatar(
-          radius: Get.width * 0.06,
-          backgroundColor: CustomColors.secondaryColor,
-          child: Icon(
-            Icons.person_rounded,
-            size: Get.width * 0.1,
-            color: CustomColors.witheColor,
+  Widget chatArea() {
+    return Expanded(
+      child: Column(
+        children: [
+          Expanded(
+            child: Obx(
+              () => Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 16,
+                ),
+                child: ListView.builder(
+                  reverse: true,
+                  controller: controller.scrollController,
+                  padding: EdgeInsets.all(8),
+                  itemCount: controller.messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = controller.messages[index];
+                    return chatBubble(msg);
+                  },
+                ),
+              ),
+            ),
           ),
-        ),
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            color: Colors.grey[200],
+            child: Row(
+              children: [
+                GestureDetector(
+                  child: Icon(
+                    Icons.attach_file_rounded,
+                    color: CustomColors.secondaryColor,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: controller.inputController,
+                    decoration: InputDecoration(
+                      hintText: 'Escrever uma mensagem...',
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                GestureDetector(
+                  onTap: controller.sendMessage,
+                  child: SvgPicture.asset(
+                    'assets/images/icon_send.svg',
+                    width: Get.width * 0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      title: Text(title),
-      subtitle: Text(
-        subtitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        softWrap: false,
-      ),
-      onTap: () {
-        Get.toNamed(Routes.chatDetails, arguments: {'userID': userID});
-      },
-      trailing: Text(time),
     );
   }
 
-  Widget search() {
-    return Padding(
-      padding: EdgeInsets.all(Get.width * 0.05),
-      child: Container(
-        decoration: BoxDecoration(
-          color: CustomColors.witheColor,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+  Widget chatBubble(Message msg) {
+    return Row(
+      mainAxisAlignment: msg.isSentByMe
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          constraints: BoxConstraints(maxWidth: Get.width * 0.7),
+          decoration: BoxDecoration(
+            color: msg.isSentByMe
+                ? CustomColors.secondaryColor
+                : CustomColors.primaryLightColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomLeft: msg.isSentByMe ? Radius.circular(16) : Radius.zero,
+              bottomRight: msg.isSentByMe ? Radius.zero : Radius.circular(16),
             ),
-          ],
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Pesquisar contatos',
-            prefixIcon: const Icon(Icons.search),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
-          onChanged: (value) {},
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                msg.text,
+                style: TextStyle(
+                  color: msg.isSentByMe ? Colors.white : Colors.black87,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                msg.time,
+                style: TextStyle(fontSize: 10, color: Colors.grey[200]),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
