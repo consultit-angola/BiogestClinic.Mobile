@@ -101,7 +101,7 @@ class HomePage extends GetView<HomeController> {
                       pendingNotifCount: 3,
                       onTap: () {
                         CustomMenuController.to.selectItem(3);
-                        Get.toNamed(Routes.alarm);
+                        Get.toNamed(Routes.alarme);
                       },
                     ),
                   ),

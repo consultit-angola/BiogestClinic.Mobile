@@ -26,10 +26,11 @@ abstract class AppPages {
       page: () => const ChatDetailsPage(),
       binding: ChatBinding(),
     ),
-    // GetPage(
-    //     name: Routes.driverRegister,
-    //     page: () => const DriverRegisterPage(),
-    //     binding: DriverRegisterBinding()),
+    GetPage(
+      name: Routes.alarme,
+      page: () => const AlarmePage(),
+      binding: AlarmeBinding(),
+    ),
     // GetPage(
     //     name: Routes.driverMap,
     //     page: () => const DriverMapPage(),

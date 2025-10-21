@@ -1,3 +1,4 @@
+export 'alarme_controller.dart';
 export 'chat_controller.dart';
 export 'global_controller.dart';
 export 'home_controller.dart';
