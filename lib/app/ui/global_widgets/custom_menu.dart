@@ -32,6 +32,7 @@ Widget customMenu() {
             Expanded(
               child: menuButton(
                 icon: Icons.home,
+                pendingNotifCount: 0,
                 pos: 0,
                 isSelected: menuController.selectedPosItem.value == 0,
                 onTap: () {
@@ -43,7 +44,8 @@ Widget customMenu() {
             Expanded(
               child: menuButton(
                 icon: Icons.chat,
-                pendingNotifCount: 1,
+                pendingNotifCount:
+                    menuController.globalController.pendingMessages.value,
                 pos: 0,
                 isSelected: menuController.selectedPosItem.value == 1,
                 onTap: () {
@@ -55,7 +57,8 @@ Widget customMenu() {
             Expanded(
               child: menuButton(
                 icon: Icons.calendar_month,
-                pendingNotifCount: 5,
+                pendingNotifCount:
+                    menuController.globalController.pendingCalendar.value,
                 pos: 1,
                 isSelected: menuController.selectedPosItem.value == 2,
                 onTap: () {
@@ -67,18 +70,21 @@ Widget customMenu() {
             Expanded(
               child: menuButton(
                 icon: Icons.notifications_active,
-                pendingNotifCount: 3,
+                pendingNotifCount:
+                    menuController.globalController.pendingAlarms.value,
                 pos: 2,
                 isSelected: menuController.selectedPosItem.value == 3,
                 onTap: () {
                   menuController.selectItem(3);
-                  Get.toNamed(Routes.alarme);
+                  Get.toNamed(Routes.alarm);
                 },
               ),
             ),
             Expanded(
               child: menuButton(
                 icon: Icons.groups,
+                pendingNotifCount:
+                    menuController.globalController.pendingActivities.value,
                 pos: 3,
                 isSelected: menuController.selectedPosItem.value == 4,
                 onTap: () {
@@ -96,7 +102,7 @@ Widget customMenu() {
 
 Widget menuButton({
   required IconData icon,
-  int? pendingNotifCount,
+  required int pendingNotifCount,
   required int pos,
   required bool isSelected,
   required VoidCallback onTap,
@@ -114,7 +120,7 @@ Widget menuButton({
                 ? CustomColors.witheColor
                 : CustomColors.primaryColor,
           ),
-          if (pendingNotifCount != null)
+          if (pendingNotifCount != 0)
             Positioned(
               right: -6,
               top: -4,

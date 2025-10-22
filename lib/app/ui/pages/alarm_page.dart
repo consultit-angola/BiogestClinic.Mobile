@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import '../../controllers/index.dart';
 import '../index.dart';
 
-class AlarmePage extends GetView<AlarmeController> {
-  const AlarmePage({super.key});
+class AlarmPage extends GetView<AlarmController> {
+  const AlarmPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<AlarmeController>(
-      builder: (alarmeController) => Scaffold(
+    return GetBuilder<AlarmController>(
+      builder: (alarmController) => Scaffold(
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [

@@ -1,4 +1,5 @@
 export 'address_model.dart';
+export 'attachment_model.dart';
 export 'auth_model.dart';
 export 'broadcast_channel_model.dart';
 export 'employee_model.dart';

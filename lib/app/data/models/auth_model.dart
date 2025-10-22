@@ -7,7 +7,7 @@ class AuthResponseDTO {
   final String accessTokenExpireDate;
   final String refreshToken;
   final String refreshTokenExpiration;
-  final UserInfoDTO userInfo;
+  final UserDTO userInfo;
   final EmployeeDTO employee;
 
   AuthResponseDTO({
@@ -29,7 +29,7 @@ class AuthResponseDTO {
         accessTokenExpireDate: json['AccessTokenExpireDate'] ?? '',
         refreshToken: json['RefreshToken'] ?? '',
         refreshTokenExpiration: json['RefreshTokenExpiration'] ?? '',
-        userInfo: UserInfoDTO.fromJson(json['UserInfo'] ?? {}),
+        userInfo: UserDTO.fromJson(json['UserInfo'] ?? {}),
         employee: EmployeeDTO.fromJson(json['Employee'] ?? {}),
       );
 

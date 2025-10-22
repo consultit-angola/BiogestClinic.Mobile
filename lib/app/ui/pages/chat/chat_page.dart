@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:searchfield/searchfield.dart';
 
 import '../../../controllers/index.dart';
+import '../../../data/models/index.dart';
 import '../../../routes/index.dart';
 import '../../index.dart';
 
@@ -27,11 +30,13 @@ class ChatPage extends GetView<ChatController> {
                 ),
               ),
             ),
-            Stack(
-              children: [
-                Column(children: [customAppbar(), contactList()]),
-                customMenu(),
-              ],
+            Obx(
+              () => Stack(
+                children: [
+                  Column(children: [customAppbar(), search(), lastMessages()]),
+                  customMenu(),
+                ],
+              ),
             ),
           ],
         ),
@@ -39,35 +44,38 @@ class ChatPage extends GetView<ChatController> {
     );
   }
 
-  Widget contactList() {
+  Widget lastMessages() {
+    var lastMessages = <Widget>[];
+
+    for (final message in controller.globalController.messages.entries) {
+      final user = controller.users.firstWhereOrNull(
+        (u) => u.id == message.key,
+      );
+      final List<MessageDTO> chatMessages = message.value;
+      if (user != null) {
+        final lastMessage = chatMessages[chatMessages.length - 1];
+        lastMessages.add(
+          contact(
+            user: user,
+            lastMessage: lastMessage.messageText,
+            time: DateFormat('HH:mm').format(lastMessage.creationDate),
+            pendingMessages: chatMessages.length,
+          ),
+        );
+      }
+    }
+
     return Expanded(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          search(),
-          contact(
-            title: 'Maria Silva',
-            subtitle: 'Ola como posso ajudar?',
-            time: '10:30 AM',
-            userID: 1,
-          ),
-          contact(
-            title: 'João Pereira',
-            subtitle:
-                'Preciso marcar uma consulta esto es para aumentar el tamano del texto y ver como se comporta en la interfaz de usuario.',
-            time: 'Ontem',
-            userID: 2,
-          ),
-        ],
-      ),
+      child: ListView(padding: EdgeInsets.zero, children: lastMessages),
     );
   }
 
   Widget contact({
-    required String title,
-    required String subtitle,
-    required String time,
-    required int userID,
+    required UserDTO user,
+    String? lastMessage,
+    String? time,
+    bool showTime = true,
+    int? pendingMessages,
   }) {
     return ListTile(
       leading: CircleAvatar(
@@ -83,17 +91,42 @@ class ChatPage extends GetView<ChatController> {
           ),
         ),
       ),
-      title: Text(title),
-      subtitle: Text(
-        subtitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        softWrap: false,
-      ),
+      title: Text(user.name),
+      subtitle: lastMessage != null
+          ? Text(
+              lastMessage,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            )
+          : null,
       onTap: () {
-        Get.toNamed(Routes.chatDetails, arguments: {'userID': userID});
+        controller.destinationUser.value = user;
+        controller.searchFocusNode.unfocus();
+        controller.searchController.clear();
+        Get.toNamed(Routes.chatDetails);
       },
-      trailing: Text(time),
+      trailing: showTime
+          ? Column(
+              children: [
+                Text(time ?? TimeOfDay.now().format(Get.context!)),
+                pendingMessages != null
+                    ? Container(
+                        width: Get.width * 0.07,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(Radius.circular(40)),
+                          color: CustomColors.secondaryColor,
+                        ),
+                        child: Text(
+                          pendingMessages.toString(),
+                          style: TextStyle(color: CustomColors.witheColor),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : SizedBox.shrink(),
+              ],
+            )
+          : null,
     );
   }
 
@@ -107,19 +140,36 @@ class ChatPage extends GetView<ChatController> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              blurRadius: 2,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Pesquisar contatos',
-            prefixIcon: const Icon(Icons.search),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        child: SearchField<UserDTO>(
+          controller: controller.searchController,
+          focusNode: controller.searchFocusNode,
+          maxSuggestionsInViewPort: 5,
+          itemHeight: 60,
+          suggestionsDecoration: SuggestionDecoration(
+            color: CustomColors.witheColor,
+            borderRadius: const BorderRadius.all(Radius.circular(30)),
+            elevation: 8,
           ),
-          onChanged: (value) {},
+          searchInputDecoration: SearchInputDecoration(
+            hintText: 'Pesquisar contatos',
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            fillColor: CustomColors.witheColor,
+            border: InputBorder.none,
+            prefixIcon: const Icon(Icons.search),
+          ),
+          suggestions: controller.users
+              .map(
+                (user) => SearchFieldListItem<UserDTO>(
+                  user.name,
+                  child: contact(user: user, showTime: false),
+                ),
+              )
+              .toList(),
         ),
       ),
     );

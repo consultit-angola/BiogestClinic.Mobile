@@ -1,4 +1,4 @@
-class UserInfoDTO {
+class UserDTO {
   final int id;
   final String login;
   final String name;
@@ -10,7 +10,7 @@ class UserInfoDTO {
   final String shortName;
   final String groupName;
 
-  UserInfoDTO({
+  UserDTO({
     required this.id,
     required this.login,
     required this.name,
@@ -23,7 +23,7 @@ class UserInfoDTO {
     required this.groupName,
   });
 
-  factory UserInfoDTO.fromJson(Map<String, dynamic> json) => UserInfoDTO(
+  factory UserDTO.fromJson(Map<String, dynamic> json) => UserDTO(
     id: json['ID'] ?? 0,
     login: json['Login'] ?? '',
     name: json['Name'] ?? '',

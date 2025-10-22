@@ -61,65 +61,71 @@ class HomePage extends GetView<HomeController> {
           ],
         ),
         padding: EdgeInsets.all(Get.width * 0.1),
-        child: Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: menuButton(
-                      icon: Icons.chat,
-                      label: 'Chat',
-                      pendingNotifCount: 1,
-                      onTap: () {
-                        CustomMenuController.to.selectItem(1);
-                        Get.toNamed(Routes.chat);
-                      },
+        child: Obx(
+          () => Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: menuButton(
+                        icon: Icons.chat,
+                        label: 'Chat',
+                        pendingNotifCount:
+                            controller.globalController.pendingMessages.value,
+                        onTap: () {
+                          CustomMenuController.to.selectItem(1);
+                          Get.toNamed(Routes.chat);
+                        },
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: menuButton(
-                      icon: Icons.calendar_month,
-                      label: 'Calendário',
-                      pendingNotifCount: 5,
-                      onTap: () {
-                        CustomMenuController.to.selectItem(2);
-                        Get.toNamed(Routes.calendar);
-                      },
+                    Expanded(
+                      child: menuButton(
+                        icon: Icons.calendar_month,
+                        label: 'Calendário',
+                        pendingNotifCount:
+                            controller.globalController.pendingCalendar.value,
+                        onTap: () {
+                          CustomMenuController.to.selectItem(2);
+                          Get.toNamed(Routes.calendar);
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: menuButton(
-                      icon: Icons.notifications_active,
-                      label: 'Alarme',
-                      pendingNotifCount: 3,
-                      onTap: () {
-                        CustomMenuController.to.selectItem(3);
-                        Get.toNamed(Routes.alarme);
-                      },
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: menuButton(
+                        icon: Icons.notifications_active,
+                        label: 'Alarm',
+                        pendingNotifCount:
+                            controller.globalController.pendingAlarms.value,
+                        onTap: () {
+                          CustomMenuController.to.selectItem(3);
+                          Get.toNamed(Routes.alarm);
+                        },
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: menuButton(
-                      icon: Icons.groups,
-                      label: 'Actividades',
-                      pendingNotifCount: null,
-                      onTap: () {
-                        CustomMenuController.to.selectItem(4);
-                        Get.toNamed(Routes.activities);
-                      },
+                    Expanded(
+                      child: menuButton(
+                        icon: Icons.groups,
+                        label: 'Actividades',
+                        pendingNotifCount:
+                            controller.globalController.pendingActivities.value,
+                        onTap: () {
+                          CustomMenuController.to.selectItem(4);
+                          Get.toNamed(Routes.activities);
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -128,7 +134,7 @@ class HomePage extends GetView<HomeController> {
   Widget menuButton({
     required IconData icon,
     required String label,
-    required int? pendingNotifCount,
+    required int pendingNotifCount,
     required Null Function() onTap,
   }) {
     return GestureDetector(
@@ -139,7 +145,7 @@ class HomePage extends GetView<HomeController> {
           Stack(
             children: [
               Icon(icon, size: 50, color: CustomColors.witheColor),
-              pendingNotifCount != null
+              pendingNotifCount != 0
                   ? Positioned(
                       right: 0,
                       child: Container(

@@ -3,7 +3,7 @@ export 'global_widgets/custom_menu.dart';
 export 'pages/chat/chat_page.dart';
 export 'pages/chat/chat_details_page.dart';
 export 'pages/activities_page.dart';
-export 'pages/alarme_page.dart';
+export 'pages/alarm_page.dart';
 export 'pages/calendar_page.dart';
 export 'pages/home_page.dart';
 export 'pages/login_page.dart';

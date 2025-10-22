@@ -18,12 +18,7 @@ void main() async {
   Get.put(GlobalController());
   Get.put(SplashController());
   Get.put(LoginController());
-  Get.put(HomeController());
-  Get.put(ChatController());
   Get.put(CustomMenuController());
-  Get.put(AlarmeController());
-  Get.put(CalendarController());
-  Get.put(ActivitiesController());
 
   configLoading();
   runApp(const MainApp());

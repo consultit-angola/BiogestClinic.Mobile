@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import '../controllers/index.dart';
 
-class AlarmeBinding implements Bindings {
+class AlarmBinding implements Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AlarmeController>(() => AlarmeController());
+    Get.lazyPut<AlarmController>(() => AlarmController());
   }
 }

@@ -1,5 +1,5 @@
 name: biogest_clinic_movile
-description: 'A new Flutter project.'
+description: 'Mobile application developed in Flutter for users of associated clinics, enabling seamless communication and comprehensive management of their activities. Users can chat with each other, receive and view notifications, view their appointment calendar, and access various administrative features related to their clinic. The main objective of the application is to improve user interaction, organization, and experience by providing a modern, intuitive, and efficient platform.'
 publish_to: 'none'
 version: 0.1.0
 
@@ -22,6 +22,7 @@ dependencies:
   logger: ^2.6.2
   path_provider: ^2.1.5
   permission_handler: ^12.0.1
+  searchfield: ^1.3.5
   shared_preferences: ^2.5.3
 
 dev_dependencies:
@@ -48,6 +49,17 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: 'assets/icon/app_icon.png'
-  adaptive_icon_background: '#ffffff'
-  # adaptive_icon_foreground: "assets/icon/app_icon_fg.png"
+  image_path: 'assets/icon/icon.png'
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: 'assets/icon/icon.png'
+    background_color: '#FFFFFF'
+    theme_color: '#FFFFFF'
+  windows:
+    generate: true
+    image_path: 'assets/icon/icon.png'
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: 'assets/icon/icon.png'

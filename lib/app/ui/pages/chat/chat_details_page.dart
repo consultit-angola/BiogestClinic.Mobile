@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../controllers/index.dart';
 import '../../../data/models/index.dart';
@@ -22,10 +23,12 @@ class ChatDetailsPage extends GetView<ChatController> {
               fit: BoxFit.fill,
             ),
 
-            Stack(
-              children: [
-                Column(children: [customAppbar(), buttonBack(), chatArea()]),
-              ],
+            Obx(
+              () => Stack(
+                children: [
+                  Column(children: [customAppbar(), buttonBack(), chatArea()]),
+                ],
+              ),
             ),
           ],
         ),
@@ -45,12 +48,19 @@ class ChatDetailsPage extends GetView<ChatController> {
               Get.back();
             },
           ),
-          Text(
-            controller.user.value.name,
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          SizedBox(
+            width: Get.width * 0.7,
+            child: Text(
+              controller.destinationUser.value?.name ?? '',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              textAlign: TextAlign.end,
             ),
           ),
         ],
@@ -63,22 +73,12 @@ class ChatDetailsPage extends GetView<ChatController> {
       child: Column(
         children: [
           Expanded(
-            child: Obx(
-              () => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 16,
-                ),
-                child: ListView.builder(
-                  reverse: true,
-                  controller: controller.scrollController,
-                  padding: EdgeInsets.all(8),
-                  itemCount: controller.messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = controller.messages[index];
-                    return chatBubble(msg);
-                  },
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+              child: ListView(
+                controller: controller.scrollController,
+                padding: const EdgeInsets.all(8),
+                children: buildChatList(),
               ),
             ),
           ),
@@ -128,9 +128,63 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  Widget chatBubble(Message msg) {
+  List<Widget> buildChatList() {
+    final widgets = <Widget>[];
+    final messages = controller.sortList();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.scrollToBottom();
+    });
+
+    for (int i = 0; i < messages.length; i++) {
+      final msg = messages[i];
+      final prevMsg = i > 0 ? messages[i - 1] : null;
+
+      final isDifferentDay =
+          prevMsg == null ||
+          msg.creationDate.day != prevMsg.creationDate.day ||
+          msg.creationDate.month != prevMsg.creationDate.month ||
+          msg.creationDate.year != prevMsg.creationDate.year;
+
+      if (isDifferentDay) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  controller.formatDayLabel(msg.creationDate),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      widgets.add(chatBubble(msg));
+    }
+
+    return widgets;
+  }
+
+  Widget chatBubble(MessageDTO msg) {
     return Row(
-      mainAxisAlignment: msg.isSentByMe
+      mainAxisAlignment:
+          msg.creationUserID ==
+              controller.globalController.authenticatedUser.value?.id
           ? MainAxisAlignment.end
           : MainAxisAlignment.start,
       children: [
@@ -139,28 +193,46 @@ class ChatDetailsPage extends GetView<ChatController> {
           margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           constraints: BoxConstraints(maxWidth: Get.width * 0.7),
           decoration: BoxDecoration(
-            color: msg.isSentByMe
+            color:
+                msg.creationUserID ==
+                    controller.globalController.authenticatedUser.value?.id
                 ? CustomColors.secondaryColor
                 : CustomColors.primaryLightColor,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
-              bottomLeft: msg.isSentByMe ? Radius.circular(16) : Radius.zero,
-              bottomRight: msg.isSentByMe ? Radius.zero : Radius.circular(16),
+              bottomLeft:
+                  msg.creationUserID ==
+                      controller.globalController.authenticatedUser.value?.id
+                  ? Radius.circular(16)
+                  : Radius.zero,
+              bottomRight:
+                  msg.creationUserID ==
+                      controller.globalController.authenticatedUser.value?.id
+                  ? Radius.zero
+                  : Radius.circular(16),
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                msg.text,
+                msg.messageText,
                 style: TextStyle(
-                  color: msg.isSentByMe ? Colors.white : Colors.black87,
+                  color:
+                      msg.creationUserID ==
+                          controller
+                              .globalController
+                              .authenticatedUser
+                              .value
+                              ?.id
+                      ? Colors.white
+                      : Colors.black87,
                 ),
               ),
               SizedBox(height: 2),
               Text(
-                msg.time,
+                DateFormat('HH:mm').format(msg.creationDate),
                 style: TextStyle(fontSize: 10, color: Colors.grey[200]),
               ),
             ],

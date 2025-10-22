@@ -27,9 +27,9 @@ abstract class AppPages {
       binding: ChatBinding(),
     ),
     GetPage(
-      name: Routes.alarme,
-      page: () => const AlarmePage(),
-      binding: AlarmeBinding(),
+      name: Routes.alarm,
+      page: () => const AlarmPage(),
+      binding: AlarmBinding(),
     ),
     GetPage(
       name: Routes.calendar,

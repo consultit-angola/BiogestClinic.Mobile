@@ -1,5 +1,5 @@
 export 'activities_controller.dart';
-export 'alarme_controller.dart';
+export 'alarm_controller.dart';
 export 'calendar_controller.dart';
 export 'chat_controller.dart';
 export 'global_controller.dart';

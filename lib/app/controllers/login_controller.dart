@@ -56,15 +56,18 @@ class LoginController extends GetxController {
       try {
         EasyLoading.show();
         Map<String, dynamic> resp = await _provider.login(
-          username ?? '',
-          password ?? '',
-          selectedStoreID!,
+          username: username ?? '',
+          password: password ?? '',
+          storeID: selectedStoreID!,
         );
         if (resp['ok']) {
-          globalController.user.value =
+          globalController.authenticatedUser.value =
               (resp['data'] as AuthResponseDTO).userInfo;
           logger.i('El usuario esta logeado');
           globalController.isAuthenticated.value = true;
+
+          globalController.initControllers();
+
           EasyLoading.dismiss();
           Get.offAllNamed(Routes.home);
         } else {

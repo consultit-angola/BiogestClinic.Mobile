@@ -12,7 +12,9 @@ class Provider {
 
   Map<String, String> getHeaderJson() {
     Map<String, String> dataHeader = {
-      'Content-Type': '	application/json; charset=utf-8',
+      'Authorization': 'Bearer ${_preferences.token}',
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
     };
     return dataHeader;
   }
@@ -23,7 +25,6 @@ class Provider {
         '${dotenv.env['API_URL']}/Store',
       ).replace(queryParameters: {'withDeleted': 'false'});
 
-      logger.i('GET $uri');
       final resp = await http.get(uri, headers: getHeaderJson());
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         final data = json.decode(resp.body);
@@ -42,11 +43,11 @@ class Provider {
     }
   }
 
-  Future<Map<String, dynamic>> login(
-    String username,
-    String password,
-    int storeID,
-  ) async {
+  Future<Map<String, dynamic>> login({
+    required String username,
+    required String password,
+    required int storeID,
+  }) async {
     try {
       final uri = Uri.parse('${dotenv.env['API_URL']}/Auth/AuthenticateUser')
           .replace(
@@ -99,6 +100,116 @@ class Provider {
       ).replace(queryParameters: {'userID': _preferences.userID.toString()});
 
       final resp = await http.post(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        return {'ok': true};
+      } else {
+        return {'ok': false, 'message': resp.body};
+      }
+    } on SocketException catch (_) {
+      return {'ok': false, 'message': 'Error de conexión'};
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUsers() async {
+    try {
+      final uri = Uri.parse(
+        '${dotenv.env['API_URL']}/User',
+      ).replace(queryParameters: {'withDeleted': 'false'});
+
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body);
+        var users = <UserDTO>[];
+        (data as List)
+            .map((user) => users.add(UserDTO.fromJson(user)))
+            .toList();
+        return {'ok': true, 'data': users};
+      } else {
+        return {'ok': false, 'message': resp.body};
+      }
+    } on SocketException catch (_) {
+      return {'ok': false, 'message': 'Error de conexión'};
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getMessages({
+    required int userID,
+    bool onlyUnread = false,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '${dotenv.env['API_URL']}/EmailSMS/ChatMessage/Search',
+      );
+
+      final body = {
+        "StartDate": startDate?.toUtc().toIso8601String(),
+        "EndDate": endDate?.toUtc().toIso8601String(),
+        "UserID": userID,
+        "OnlyUnread": onlyUnread,
+      };
+
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body);
+        var messages = <MessageDTO>[];
+        (data as List)
+            .map((message) => messages.add(MessageDTO.fromJson(message)))
+            .toList();
+        return {'ok': true, 'data': messages};
+      } else {
+        return {'ok': false, 'message': resp.body};
+      }
+    } on SocketException catch (_) {
+      return {'ok': false, 'message': 'Error de conexión'};
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> sendMessage({
+    required MessageDTO message,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '${dotenv.env['API_URL']}/EmailSMS/ChatMessage/Insert',
+      );
+
+      final resp = await http.post(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(message),
+      );
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body);
+        var message = MessageDTO.fromJson(data);
+        return {'ok': true, 'data': message};
+      } else {
+        return {'ok': false, 'message': resp.body};
+      }
+    } on SocketException catch (_) {
+      return {'ok': false, 'message': 'Error de conexión'};
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> setMarkAsRead({required int messageID}) async {
+    try {
+      final uri = Uri.parse(
+        '${dotenv.env['API_URL']}/EmailSMS/ChatMessage/MarkAsRead/$messageID',
+      );
+
+      final resp = await http.get(uri, headers: getHeaderJson());
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         return {'ok': true};
       } else {
