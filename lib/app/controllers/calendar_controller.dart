@@ -23,7 +23,11 @@ class CalendarController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getAppts();
+
+    if (!globalController.isCalendarControllerLoaded) {
+      getAppts();
+      globalController.isCalendarControllerLoaded = true;
+    }
   }
 
   Future<void> getAppts() async {

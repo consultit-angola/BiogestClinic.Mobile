@@ -11,7 +11,6 @@ class ChatController extends GetxController {
   static ChatController get to => Get.find<ChatController>();
   final Provider _provider = Provider();
   final globalController = GlobalController.to;
-  final RxList<UserDTO> users = <UserDTO>[].obs;
   final FocusNode searchFocusNode = FocusNode();
   final TextEditingController searchController = TextEditingController();
   var inputController = TextEditingController();
@@ -22,19 +21,23 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getUsers();
-    getMessages();
+
+    if (!globalController.isChatControllerLoaded) {
+      getUsers();
+      getMessages();
+      globalController.isChatControllerLoaded = true;
+    }
   }
 
   void getUsers({bool forceReload = false}) async {
-    if (users.isNotEmpty && !forceReload) return;
+    if (globalController.users.isNotEmpty && !forceReload) return;
 
     try {
-      users.clear();
+      globalController.users.clear();
       EasyLoading.show();
       Map<String, dynamic> resp = await _provider.getUsers();
       if (resp['ok']) {
-        users.value = resp['data'] as List<UserDTO>;
+        globalController.users.value = resp['data'] as List<UserDTO>;
         EasyLoading.dismiss();
       } else {
         Get.snackbar('Error', resp['message']);
@@ -46,12 +49,10 @@ class ChatController extends GetxController {
     }
   }
 
-  void getMessages({silenceLoad = false}) async {
+  void getMessages() async {
     try {
       globalController.messages.clear();
-      if (!silenceLoad) {
-        EasyLoading.show();
-      }
+      EasyLoading.show();
 
       Map<String, dynamic> resp = await _provider.getMessages(
         userID: globalController.authenticatedUser.value!.id,
@@ -73,16 +74,12 @@ class ChatController extends GetxController {
             : 99;
         EasyLoading.dismiss();
       } else {
-        if (!silenceLoad) {
-          Get.snackbar('Error', resp['message']);
-        }
+        Get.snackbar('Error', resp['message']);
       }
       EasyLoading.dismiss();
     } catch (error) {
       EasyLoading.dismiss();
-      if (!silenceLoad) {
-        Get.snackbar('Error', '$error');
-      }
+      Get.snackbar('Error', '$error');
     }
   }
 
@@ -112,7 +109,7 @@ class ChatController extends GetxController {
           globalController.messages[message.destinationUserID] = [message];
         }
 
-        getMessages(silenceLoad: true);
+        getMessages();
         inputController.clear();
 
         if (scrollController.hasClients) {
@@ -160,7 +157,7 @@ class ChatController extends GetxController {
 
   void scrollToBottom() {
     if (scrollController.hasClients) {
-      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+      scrollController.jumpTo(scrollController.position.maxScrollExtent + 10);
     }
   }
 

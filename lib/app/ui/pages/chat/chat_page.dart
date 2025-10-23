@@ -48,7 +48,7 @@ class ChatPage extends GetView<ChatController> {
     var lastMessages = <Widget>[];
 
     for (final message in controller.globalController.messages.entries) {
-      final user = controller.users.firstWhereOrNull(
+      final user = controller.globalController.users.firstWhereOrNull(
         (u) => u.id == message.key,
       );
       final List<MessageDTO> chatMessages = message.value;
@@ -107,24 +107,28 @@ class ChatPage extends GetView<ChatController> {
         Get.toNamed(Routes.chatDetails);
       },
       trailing: showTime
-          ? Column(
-              children: [
-                Text(time ?? TimeOfDay.now().format(Get.context!)),
-                pendingMessages != null
-                    ? Container(
-                        width: Get.width * 0.07,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(40)),
-                          color: CustomColors.secondaryColor,
-                        ),
-                        child: Text(
-                          pendingMessages.toString(),
-                          style: TextStyle(color: CustomColors.witheColor),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : SizedBox.shrink(),
-              ],
+          ? Padding(
+              padding: const EdgeInsets.all(6.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  pendingMessages != null
+                      ? Container(
+                          width: Get.width * 0.07,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.all(Radius.circular(40)),
+                            color: CustomColors.secondaryColor,
+                          ),
+                          child: Text(
+                            pendingMessages.toString(),
+                            style: TextStyle(color: CustomColors.witheColor),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : SizedBox.shrink(),
+                  Text(time ?? TimeOfDay.now().format(Get.context!)),
+                ],
+              ),
             )
           : null,
     );
@@ -162,7 +166,7 @@ class ChatPage extends GetView<ChatController> {
             border: InputBorder.none,
             prefixIcon: const Icon(Icons.search),
           ),
-          suggestions: controller.users
+          suggestions: controller.globalController.users
               .map(
                 (user) => SearchFieldListItem<UserDTO>(
                   user.name,

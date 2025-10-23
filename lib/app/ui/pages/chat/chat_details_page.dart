@@ -74,7 +74,7 @@ class ChatDetailsPage extends GetView<ChatController> {
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: ListView(
                 controller: controller.scrollController,
                 padding: const EdgeInsets.all(8),

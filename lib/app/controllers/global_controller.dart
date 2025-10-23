@@ -14,6 +14,7 @@ class GlobalController extends GetxController {
   final Provider _provider = Provider();
   RxBool isAuthenticated = false.obs;
   final Rxn<UserDTO> authenticatedUser = Rxn<UserDTO>();
+  final RxList<UserDTO> users = <UserDTO>[].obs;
   RxMap<int, List<MessageDTO>> messages = <int, List<MessageDTO>>{}.obs;
   final RxList<NeatCleanCalendarEvent> eventList =
       <NeatCleanCalendarEvent>[].obs;
@@ -21,6 +22,9 @@ class GlobalController extends GetxController {
   var pendingCalendar = 0.obs;
   var pendingAlarms = 0.obs;
   var pendingActivities = 0.obs;
+
+  var isCalendarControllerLoaded = false;
+  var isChatControllerLoaded = false;
 
   // @override
   // void onInit() {
