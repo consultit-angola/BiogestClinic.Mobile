@@ -46,16 +46,18 @@ class CalendarPage extends GetView<CalendarController> {
 
   Widget calendar() {
     return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
+      padding: EdgeInsets.only(top: 8, bottom: Get.height * 0.08),
       child: Calendar(
+        topRowIconColor: CustomColors.primaryColor,
+        bottomBarColor: CustomColors.primaryLightColor,
         startOnMonday: true,
         weekDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        eventsList: controller.eventList,
+        eventsList: controller.globalController.eventList..toList(),
         isExpandable: true,
-        eventDoneColor: Colors.green,
-        selectedColor: Colors.pink,
+        eventDoneColor: CustomColors.secondaryColor,
+        selectedColor: CustomColors.tertiaryColor,
         selectedTodayColor: Colors.red,
-        todayColor: Colors.blue,
+        todayColor: CustomColors.primaryColor,
         eventColor: null,
         locale: 'pt_PT',
         todayButtonText: 'Hoje',

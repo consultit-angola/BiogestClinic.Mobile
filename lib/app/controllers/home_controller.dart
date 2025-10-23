@@ -6,9 +6,8 @@ class HomeController extends GetxController {
   static HomeController get to => Get.find<HomeController>();
   final globalController = GlobalController.to;
 
-  @override
-  void onInit() {
-    super.onInit();
-    globalController.getMessages();
-  }
+  // @override
+  // void onInit() {
+  //   super.onInit();
+  // }
 }

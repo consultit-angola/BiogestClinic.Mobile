@@ -221,4 +221,33 @@ class Provider {
       return {'ok': false, 'message': '$e'};
     }
   }
+
+  Future<Map<String, dynamic>> getAppts(Map<String, dynamic> body) async {
+    try {
+      final uri = Uri.parse(
+        '${dotenv.env['API_URL']}/Appointment/SearchAppointments',
+      );
+
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body);
+        var appts = <AppointmentDTO>[];
+        (data['Appointments'] as List)
+            .map((appt) => appts.add(AppointmentDTO.fromJson(appt)))
+            .toList();
+        return {'ok': true, 'data': appts};
+      } else {
+        return {'ok': false, 'message': resp.body};
+      }
+    } on SocketException catch (_) {
+      return {'ok': false, 'message': 'Error de conexión'};
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
 }

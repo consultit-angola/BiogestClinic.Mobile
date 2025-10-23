@@ -23,6 +23,7 @@ class ChatController extends GetxController {
   void onInit() {
     super.onInit();
     getUsers();
+    getMessages();
   }
 
   void getUsers({bool forceReload = false}) async {
@@ -42,6 +43,46 @@ class ChatController extends GetxController {
     } catch (error) {
       EasyLoading.dismiss();
       Get.snackbar('Error', '$error');
+    }
+  }
+
+  void getMessages({silenceLoad = false}) async {
+    try {
+      globalController.messages.clear();
+      if (!silenceLoad) {
+        EasyLoading.show();
+      }
+
+      Map<String, dynamic> resp = await _provider.getMessages(
+        userID: globalController.authenticatedUser.value!.id,
+      );
+      if (resp['ok']) {
+        var auxMessages = resp['data'] as List<MessageDTO>;
+        for (var message in auxMessages) {
+          if (globalController.messages.containsKey(
+            message.destinationUserID,
+          )) {
+            globalController.messages[message.destinationUserID]!.add(message);
+            globalController.messages.refresh();
+          } else {
+            globalController.messages[message.destinationUserID] = [message];
+          }
+        }
+        globalController.pendingMessages.value = auxMessages.length <= 99
+            ? auxMessages.length
+            : 99;
+        EasyLoading.dismiss();
+      } else {
+        if (!silenceLoad) {
+          Get.snackbar('Error', resp['message']);
+        }
+      }
+      EasyLoading.dismiss();
+    } catch (error) {
+      EasyLoading.dismiss();
+      if (!silenceLoad) {
+        Get.snackbar('Error', '$error');
+      }
     }
   }
 
@@ -71,7 +112,7 @@ class ChatController extends GetxController {
           globalController.messages[message.destinationUserID] = [message];
         }
 
-        globalController.getMessages(silenceLoad: true);
+        getMessages(silenceLoad: true);
         inputController.clear();
 
         if (scrollController.hasClients) {
