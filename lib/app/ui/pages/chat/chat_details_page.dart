@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -12,26 +12,25 @@ class ChatDetailsPage extends GetView<ChatController> {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<ChatController>(
-      builder: (chatController) => Scaffold(
-        body: Stack(
-          children: [
-            Image.asset(
-              'assets/images/background.png',
-              width: Get.width,
-              height: Get.height,
-              fit: BoxFit.fill,
-            ),
+    // Ejecutar después del primer frame (solo una vez)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.markConversationAsRead();
+    });
 
-            Obx(
-              () => Stack(
-                children: [
-                  Column(children: [customAppbar(), buttonBack(), chatArea()]),
-                ],
-              ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Fondo
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/background.png',
+              fit: BoxFit.cover,
             ),
-          ],
-        ),
+          ),
+
+          // Contenido principal
+          Column(children: [customAppbar(), buttonBack(), _buildChatArea()]),
+        ],
       ),
     );
   }
@@ -68,177 +67,225 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  Widget chatArea() {
+  /// 🔹 Área del chat con lista de mensajes y campo de entrada
+  Widget _buildChatArea() {
     return Expanded(
       child: Column(
         children: [
+          // Lista de mensajes
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: ListView(
+            child: Obx(() {
+              final messages = controller.sortList();
+              return ListView.builder(
                 controller: controller.scrollController,
+                reverse: true,
                 padding: const EdgeInsets.all(8),
-                children: buildChatList(),
-              ),
-            ),
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final reversedIndex = messages.length - 1 - index;
+                  final msg = messages[reversedIndex];
+                  final prevMsg = reversedIndex > 0
+                      ? messages[reversedIndex - 1]
+                      : null;
+
+                  final isDifferentDay =
+                      prevMsg == null ||
+                      !controller.isSameDay(
+                        msg.creationDate,
+                        prevMsg.creationDate,
+                      );
+
+                  return Column(
+                    children: [
+                      if (isDifferentDay) _buildDateLabel(msg.creationDate),
+                      _buildChatBubble(msg),
+                    ],
+                  );
+                },
+              );
+            }),
           ),
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            color: Colors.grey[200],
-            child: Row(
-              children: [
-                GestureDetector(
-                  child: Icon(
-                    Icons.attach_file_rounded,
-                    color: CustomColors.secondaryColor,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: controller.inputController,
-                    decoration: InputDecoration(
-                      hintText: 'Escrever uma mensagem...',
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                GestureDetector(
-                  onTap: controller.sendMessage,
-                  child: SvgPicture.asset(
-                    'assets/images/icon_send.svg',
-                    width: Get.width * 0.1,
-                  ),
-                ),
-              ],
-            ),
-          ),
+
+          // Campo de entrada
+          _buildMessageInput(),
         ],
       ),
     );
   }
 
-  List<Widget> buildChatList() {
-    final widgets = <Widget>[];
-    final messages = controller.sortList();
+  /// 🔹 Burbujas de chat (enviadas y recibidas)
+  Widget _buildChatBubble(MessageDTO msg) {
+    final isMine =
+        msg.creationUserID ==
+            controller.globalController.authenticatedUser.value?.id ||
+        msg.creationUserID == 0;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.scrollToBottom();
-    });
+    final bubbleColor = isMine
+        ? CustomColors.secondaryColor
+        : CustomColors.primaryLightColor;
 
-    for (int i = 0; i < messages.length; i++) {
-      final msg = messages[i];
-      final prevMsg = i > 0 ? messages[i - 1] : null;
-
-      final isDifferentDay =
-          prevMsg == null ||
-          msg.creationDate.day != prevMsg.creationDate.day ||
-          msg.creationDate.month != prevMsg.creationDate.month ||
-          msg.creationDate.year != prevMsg.creationDate.year;
-
-      if (isDifferentDay) {
-        widgets.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  controller.formatDayLabel(msg.creationDate),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-
-      widgets.add(chatBubble(msg));
-    }
-
-    return widgets;
-  }
-
-  Widget chatBubble(MessageDTO msg) {
     return Row(
-      mainAxisAlignment:
-          msg.creationUserID ==
-              controller.globalController.authenticatedUser.value?.id
+      mainAxisAlignment: isMine
           ? MainAxisAlignment.end
           : MainAxisAlignment.start,
       children: [
-        Container(
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-          margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          constraints: BoxConstraints(maxWidth: Get.width * 0.7),
-          decoration: BoxDecoration(
-            color:
-                msg.creationUserID ==
-                    controller.globalController.authenticatedUser.value?.id
-                ? CustomColors.secondaryColor
-                : CustomColors.primaryLightColor,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-              bottomLeft:
-                  msg.creationUserID ==
-                      controller.globalController.authenticatedUser.value?.id
-                  ? Radius.circular(16)
-                  : Radius.zero,
-              bottomRight:
-                  msg.creationUserID ==
-                      controller.globalController.authenticatedUser.value?.id
-                  ? Radius.zero
-                  : Radius.circular(16),
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            constraints: BoxConstraints(maxWidth: Get.width * 0.7),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: isMine ? const Radius.circular(16) : Radius.zero,
+                bottomRight: isMine ? Radius.zero : const Radius.circular(16),
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                msg.messageText,
-                style: TextStyle(
-                  color:
-                      msg.creationUserID ==
-                          controller
-                              .globalController
-                              .authenticatedUser
-                              .value
-                              ?.id
-                      ? Colors.white
-                      : Colors.black87,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                DateFormat('HH:mm').format(msg.creationDate),
-                style: TextStyle(fontSize: 10, color: Colors.grey[200]),
-              ),
-            ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isMine) _buildMessageState(msg),
+                if (!isMine) const SizedBox(width: 8),
+                _buildMessageText(msg),
+                if (isMine) const SizedBox(width: 8),
+                if (isMine) _buildMessageState(msg),
+              ],
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  /// 🔹 Texto del mensaje
+  Widget _buildMessageText(MessageDTO msg) {
+    return Flexible(
+      child: Text(
+        msg.messageText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  /// 🔹 Estado y hora del mensaje
+  Widget _buildMessageState(MessageDTO msg) {
+    final isMine =
+        msg.creationUserID ==
+        controller.globalController.authenticatedUser.value?.id;
+
+    IconData? icon;
+    Color? color;
+
+    if (isMine) {
+      switch (msg.status) {
+        case MessageStatus.sending:
+          icon = Icons.access_time;
+          color = Colors.grey[300];
+          break;
+        case MessageStatus.sent:
+          icon = Icons.check;
+          color = Colors.grey[300];
+          break;
+        case MessageStatus.read:
+          icon = Icons.done_all;
+          color = Colors.blueAccent;
+          break;
+        default:
+          icon = Icons.error;
+          color = Colors.redAccent;
+      }
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          DateFormat('HH:mm').format(msg.creationDate),
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
+        ),
+        if (isMine && icon != null) ...[
+          const SizedBox(width: 4),
+          Icon(icon, size: 14, color: color),
+        ],
+      ],
+    );
+  }
+
+  /// 🔹 Etiqueta de día
+  Widget _buildDateLabel(DateTime date) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            controller.formatDayLabel(date),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🔹 Campo de entrada del mensaje
+  Widget _buildMessageInput() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      color: Colors.grey[200],
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {},
+            child: Icon(
+              Icons.attach_file_rounded,
+              color: CustomColors.secondaryColor,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller.inputController,
+              decoration: InputDecoration(
+                hintText: 'Escrever uma mensagem...',
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: controller.sendMessage,
+            child: SvgPicture.asset(
+              'assets/images/icon_send.svg',
+              width: Get.width * 0.1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

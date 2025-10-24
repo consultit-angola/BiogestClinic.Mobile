@@ -24,14 +24,15 @@ class Provider {
       final uri = Uri.parse(
         '${dotenv.env['API_URL']}/Store',
       ).replace(queryParameters: {'withDeleted': 'false'});
-
       final resp = await http.get(uri, headers: getHeaderJson());
+      var stores = <StoreDTO>[];
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         final data = json.decode(resp.body);
-        var stores = <StoreDTO>[];
         (data as List)
             .map((store) => stores.add(StoreDTO.fromJson(store)))
             .toList();
+        return {'ok': true, 'data': stores};
+      } else if (resp.statusCode == 404) {
         return {'ok': true, 'data': stores};
       } else {
         return {'ok': false, 'message': resp.body};
@@ -54,7 +55,7 @@ class Provider {
             queryParameters: {
               "login": username,
               "password": password,
-              "storeID": password,
+              "storeID": storeID.toString(),
             },
           );
 
@@ -119,12 +120,14 @@ class Provider {
       ).replace(queryParameters: {'withDeleted': 'false'});
 
       final resp = await http.get(uri, headers: getHeaderJson());
+      var users = <UserDTO>[];
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         final data = json.decode(resp.body);
-        var users = <UserDTO>[];
         (data as List)
             .map((user) => users.add(UserDTO.fromJson(user)))
             .toList();
+        return {'ok': true, 'data': users};
+      } else if (resp.statusCode == 404) {
         return {'ok': true, 'data': users};
       } else {
         return {'ok': false, 'message': resp.body};
@@ -136,35 +139,25 @@ class Provider {
     }
   }
 
-  Future<Map<String, dynamic>> getMessages({
-    required int userID,
-    bool onlyUnread = false,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
+  Future<Map<String, dynamic>> getMessages(Map<String, dynamic> body) async {
     try {
       final uri = Uri.parse(
         '${dotenv.env['API_URL']}/EmailSMS/ChatMessage/Search',
       );
-
-      final body = {
-        "StartDate": startDate?.toUtc().toIso8601String(),
-        "EndDate": endDate?.toUtc().toIso8601String(),
-        "UserID": userID,
-        "OnlyUnread": onlyUnread,
-      };
 
       final resp = await http.put(
         uri,
         headers: getHeaderJson(),
         body: jsonEncode(body),
       );
+      var messages = <MessageDTO>[];
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         final data = json.decode(resp.body);
-        var messages = <MessageDTO>[];
         (data as List)
             .map((message) => messages.add(MessageDTO.fromJson(message)))
             .toList();
+        return {'ok': true, 'data': messages};
+      } else if (resp.statusCode == 404) {
         return {'ok': true, 'data': messages};
       } else {
         return {'ok': false, 'message': resp.body};
@@ -203,7 +196,9 @@ class Provider {
     }
   }
 
-  Future<Map<String, dynamic>> setMarkAsRead({required int messageID}) async {
+  Future<Map<String, dynamic>> setMessageMarkAsRead({
+    required int messageID,
+  }) async {
     try {
       final uri = Uri.parse(
         '${dotenv.env['API_URL']}/EmailSMS/ChatMessage/MarkAsRead/$messageID',
@@ -212,6 +207,11 @@ class Provider {
       final resp = await http.get(uri, headers: getHeaderJson());
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         return {'ok': true};
+      } else if (resp.statusCode == 404) {
+        return {
+          'ok': false,
+          'data': 'Mensagem com ID:$messageID não encontrada',
+        };
       } else {
         return {'ok': false, 'message': resp.body};
       }
@@ -234,12 +234,14 @@ class Provider {
         body: jsonEncode(body),
       );
 
+      var appts = <AppointmentDTO>[];
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         final data = json.decode(resp.body);
-        var appts = <AppointmentDTO>[];
         (data['Appointments'] as List)
             .map((appt) => appts.add(AppointmentDTO.fromJson(appt)))
             .toList();
+        return {'ok': true, 'data': appts};
+      } else if (resp.statusCode == 404) {
         return {'ok': true, 'data': appts};
       } else {
         return {'ok': false, 'message': resp.body};

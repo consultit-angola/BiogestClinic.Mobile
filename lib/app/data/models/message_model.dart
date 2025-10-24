@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'index.dart';
 
+enum MessageStatus { sending, sent, read, failed }
+
 class MessageDTO {
   final int id;
   final String messageText;
@@ -8,6 +10,7 @@ class MessageDTO {
   final int creationUserID;
   final int destinationUserID;
   final List<AttachmentDTO> attachments;
+  MessageStatus status;
 
   MessageDTO({
     required this.id,
@@ -16,7 +19,29 @@ class MessageDTO {
     required this.creationUserID,
     required this.destinationUserID,
     required this.attachments,
+    this.status = MessageStatus.sent,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is MessageDTO &&
+        other.id == id &&
+        other.messageText == messageText &&
+        other.creationDate == creationDate &&
+        other.creationUserID == creationUserID &&
+        other.destinationUserID == destinationUserID &&
+        other.attachments == attachments;
+  }
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      messageText.hashCode ^
+      creationDate.hashCode ^
+      creationUserID.hashCode ^
+      destinationUserID.hashCode ^
+      attachments.hashCode;
 
   factory MessageDTO.fromJson(Map<String, dynamic> json) {
     return MessageDTO(
@@ -30,6 +55,7 @@ class MessageDTO {
               ?.map((a) => AttachmentDTO.fromJson(a))
               .toList() ??
           [],
+      status: MessageStatus.sent,
     );
   }
 

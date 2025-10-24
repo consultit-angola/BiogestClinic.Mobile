@@ -30,13 +30,17 @@ class ChatPage extends GetView<ChatController> {
                 ),
               ),
             ),
-            Obx(
-              () => Stack(
-                children: [
-                  Column(children: [customAppbar(), search(), lastMessages()]),
-                  customMenu(),
-                ],
-              ),
+            Stack(
+              children: [
+                Column(
+                  children: [
+                    customAppbar(),
+                    search(),
+                    Obx(() => lastMessages()),
+                  ],
+                ),
+                customMenu(),
+              ],
             ),
           ],
         ),
@@ -52,6 +56,17 @@ class ChatPage extends GetView<ChatController> {
         (u) => u.id == message.key,
       );
       final List<MessageDTO> chatMessages = message.value;
+      var pendingMessages = 0;
+      chatMessages
+          .map(
+            (m) => {
+              if (m.status == MessageStatus.sent &&
+                  m.destinationUserID ==
+                      controller.globalController.authenticatedUser.value!.id)
+                {pendingMessages++},
+            },
+          )
+          .toList();
       if (user != null) {
         final lastMessage = chatMessages[chatMessages.length - 1];
         lastMessages.add(
@@ -59,7 +74,7 @@ class ChatPage extends GetView<ChatController> {
             user: user,
             lastMessage: lastMessage.messageText,
             time: DateFormat('HH:mm').format(lastMessage.creationDate),
-            pendingMessages: chatMessages.length,
+            pendingMessages: pendingMessages,
           ),
         );
       }
@@ -110,22 +125,27 @@ class ChatPage extends GetView<ChatController> {
           ? Padding(
               padding: const EdgeInsets.all(6.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  pendingMessages != null
-                      ? Container(
-                          width: Get.width * 0.07,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.all(Radius.circular(40)),
-                            color: CustomColors.secondaryColor,
+                  pendingMessages == 0 || pendingMessages == null
+                      ? SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Container(
+                            width: Get.width * 0.07,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(40),
+                              ),
+                              color: CustomColors.secondaryColor,
+                            ),
+                            child: Text(
+                              pendingMessages.toString(),
+                              style: TextStyle(color: CustomColors.witheColor),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          child: Text(
-                            pendingMessages.toString(),
-                            style: TextStyle(color: CustomColors.witheColor),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : SizedBox.shrink(),
+                        ),
                   Text(time ?? TimeOfDay.now().format(Get.context!)),
                 ],
               ),

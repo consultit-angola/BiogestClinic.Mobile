@@ -63,6 +63,10 @@ class LoginController extends GetxController {
         if (resp['ok']) {
           globalController.authenticatedUser.value =
               (resp['data'] as AuthResponseDTO).userInfo;
+
+          globalController.authenticatedEmployee.value =
+              (resp['data'] as AuthResponseDTO).employee;
+
           logger.i('El usuario esta logeado');
           globalController.isAuthenticated.value = true;
 

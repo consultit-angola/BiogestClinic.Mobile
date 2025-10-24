@@ -9,143 +9,157 @@ import 'index.dart';
 
 class ChatController extends GetxController {
   static ChatController get to => Get.find<ChatController>();
-  final Provider _provider = Provider();
+
+  final _provider = Provider();
   final globalController = GlobalController.to;
-  final FocusNode searchFocusNode = FocusNode();
-  final TextEditingController searchController = TextEditingController();
-  var inputController = TextEditingController();
-  var scrollController = ScrollController();
-  var destinationUser = Rxn<UserDTO>();
-  var attachments = Rxn<List<AttachmentDTO>>();
+
+  final searchFocusNode = FocusNode();
+  final searchController = TextEditingController();
+  final inputController = TextEditingController();
+  final scrollController = ScrollController();
+
+  final destinationUser = Rxn<UserDTO>();
+  final attachments = Rxn<List<AttachmentDTO>>();
 
   @override
   void onInit() {
     super.onInit();
-
     if (!globalController.isChatControllerLoaded) {
       getUsers();
-      getMessages();
       globalController.isChatControllerLoaded = true;
     }
   }
 
-  void getUsers({bool forceReload = false}) async {
+  // @override
+  // void onReady() {
+  //   super.onReady();
+  //   _markConversationAsRead();
+  // }
+
+  // ────────────────────────────────
+  // USUARIOS
+  // ────────────────────────────────
+  Future<void> getUsers({bool forceReload = false}) async {
     if (globalController.users.isNotEmpty && !forceReload) return;
 
     try {
       globalController.users.clear();
       EasyLoading.show();
-      Map<String, dynamic> resp = await _provider.getUsers();
+      final resp = await _provider.getUsers();
+
       if (resp['ok']) {
         globalController.users.value = resp['data'] as List<UserDTO>;
-        EasyLoading.dismiss();
       } else {
         Get.snackbar('Error', resp['message']);
       }
-      EasyLoading.dismiss();
     } catch (error) {
-      EasyLoading.dismiss();
       Get.snackbar('Error', '$error');
+    } finally {
+      EasyLoading.dismiss();
     }
   }
 
-  void getMessages() async {
-    try {
-      globalController.messages.clear();
-      EasyLoading.show();
-
-      Map<String, dynamic> resp = await _provider.getMessages(
-        userID: globalController.authenticatedUser.value!.id,
-      );
-      if (resp['ok']) {
-        var auxMessages = resp['data'] as List<MessageDTO>;
-        for (var message in auxMessages) {
-          if (globalController.messages.containsKey(
-            message.destinationUserID,
-          )) {
-            globalController.messages[message.destinationUserID]!.add(message);
-            globalController.messages.refresh();
-          } else {
-            globalController.messages[message.destinationUserID] = [message];
-          }
-        }
-        globalController.pendingMessages.value = auxMessages.length <= 99
-            ? auxMessages.length
-            : 99;
-        EasyLoading.dismiss();
-      } else {
-        Get.snackbar('Error', resp['message']);
-      }
-      EasyLoading.dismiss();
-    } catch (error) {
-      EasyLoading.dismiss();
-      Get.snackbar('Error', '$error');
-    }
-  }
-
+  // ────────────────────────────────
+  // MENSAJES
+  // ────────────────────────────────
   Future<bool?> sendMessage() async {
+    final text = inputController.text.trim();
+    if (text.isEmpty) return null;
+
+    final tempId = -DateTime.now().millisecondsSinceEpoch;
+    final now = DateTime.now();
+
+    final message = MessageDTO(
+      id: tempId,
+      messageText: text,
+      creationDate: now,
+      creationUserID: 0,
+      destinationUserID: destinationUser.value!.id,
+      attachments: attachments.value ?? [],
+      status: MessageStatus.sending,
+    );
+
+    final key = message.destinationUserID;
+    globalController.messages.putIfAbsent(key, () => []);
+    globalController.messages[key]!.add(message);
+    globalController.messages.refresh();
+    scrollToBottom();
+
+    inputController.clear();
+
     try {
-      final text = inputController.text.trim();
-      if (text.isEmpty) return null;
-
-      var message = MessageDTO(
-        id: 0,
-        messageText: text,
-        creationDate: DateTime.now(),
-        creationUserID: globalController.authenticatedUser.value!.id,
-        destinationUserID: destinationUser.value!.id,
-        attachments: attachments.value ?? [],
-      );
-
-      EasyLoading.show();
-      Map<String, dynamic> resp = await _provider.sendMessage(message: message);
+      final resp = await _provider.sendMessage(message: message);
       if (resp['ok']) {
-        message = resp['data'];
+        final sent = resp['data'] as MessageDTO..status = MessageStatus.sent;
 
-        if (globalController.messages.containsKey(message.destinationUserID)) {
-          globalController.messages[message.destinationUserID]!.add(message);
-          globalController.messages.refresh();
-        } else {
-          globalController.messages[message.destinationUserID] = [message];
-        }
-
-        getMessages();
-        inputController.clear();
-
-        if (scrollController.hasClients) {
-          scrollController.animateTo(
-            0,
-            duration: Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          );
-        }
-        EasyLoading.dismiss();
+        _replaceTempMessage(key, tempId, sent);
+        scrollToBottom();
         return true;
       } else {
-        Get.snackbar('Error', resp['message']);
-        EasyLoading.dismiss();
+        _setMessageStatus(key, tempId, MessageStatus.failed);
         return false;
       }
     } catch (error) {
-      EasyLoading.dismiss();
-      Get.snackbar('Error', '$error');
+      _setMessageStatus(key, tempId, MessageStatus.failed);
       return false;
     }
   }
 
-  List<MessageDTO> sortList() {
-    final messagesList = [
-      ...?globalController.messages[destinationUser.value!.id],
-    ];
-    messagesList.sort((a, b) => a.creationDate.compareTo(b.creationDate));
-
-    // for (var m in messagesList) {
-    //   setMarkAsRead(m.id);
-    // }
-
-    return messagesList;
+  void _replaceTempMessage(int key, int tempId, MessageDTO sent) {
+    final msgs = globalController.messages[key]!;
+    final index = msgs.indexWhere((m) => m.id == tempId);
+    if (index != -1) {
+      msgs[index] = sent;
+    } else {
+      msgs.add(sent);
+    }
+    globalController.messages.refresh();
   }
 
+  void _setMessageStatus(int key, int messageId, MessageStatus status) {
+    if (!globalController.messages.containsKey(key)) return;
+    final msgs = globalController.messages[key]!;
+    final index = msgs.indexWhere((m) => m.id == messageId);
+    if (index != -1) {
+      msgs[index].status = status;
+      globalController.messages.refresh();
+    }
+  }
+
+  void markConversationAsRead() {
+    EasyLoading.show();
+    if (globalController.messages.isEmpty || destinationUser.value == null) {
+      EasyLoading.dismiss();
+      return;
+    }
+
+    final msgs = globalController.messages[destinationUser.value!.id];
+    if (msgs == null) {
+      EasyLoading.dismiss();
+      return;
+    }
+
+    for (final m in msgs) {
+      if (m.destinationUserID == globalController.authenticatedUser.value!.id) {
+        setMessageMarkAsRead(m.id);
+        m.status = MessageStatus.read;
+      }
+    }
+    globalController.messages.refresh();
+
+    EasyLoading.dismiss();
+    return;
+  }
+
+  List<MessageDTO> sortList() {
+    final list = [...?globalController.messages[destinationUser.value?.id]];
+    list.sort((a, b) => a.creationDate.compareTo(b.creationDate));
+    return list;
+  }
+
+  // ────────────────────────────────
+  // UTILIDADES DE FECHA / SCROLL
+  // ────────────────────────────────
   String formatDayLabel(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date).inDays;
@@ -155,25 +169,37 @@ class ChatController extends GetxController {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
-  void scrollToBottom() {
-    if (scrollController.hasClients) {
-      scrollController.jumpTo(scrollController.position.maxScrollExtent + 10);
-    }
+  bool isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  void scrollToBottom({int durationMs = 250}) {
+    if (!scrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        scrollController.animateTo(
+          0,
+          duration: Duration(milliseconds: durationMs),
+          curve: Curves.easeOut,
+        );
+      } catch (_) {
+        try {
+          scrollController.jumpTo(0);
+        } catch (_) {}
+      }
+    });
   }
 
-  void setMarkAsRead(int messageID) async {
+  // ────────────────────────────────
+  // MARCAR LEÍDO
+  // ────────────────────────────────
+  Future<void> setMessageMarkAsRead(int messageID) async {
     try {
-      EasyLoading.show();
-      Map<String, dynamic> resp = await _provider.setMarkAsRead(
-        messageID: messageID,
-      );
+      final resp = await _provider.setMessageMarkAsRead(messageID: messageID);
       if (!resp['ok']) {
         Get.snackbar('Error', resp['message']);
       }
-      EasyLoading.dismiss();
     } catch (error) {
-      EasyLoading.dismiss();
       Get.snackbar('Error', '$error');
-    }
+    } finally {}
   }
 }

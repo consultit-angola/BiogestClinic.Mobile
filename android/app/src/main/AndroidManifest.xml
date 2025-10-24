@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:label="biogest_clinic_movile"
+        android:label="MyBio"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

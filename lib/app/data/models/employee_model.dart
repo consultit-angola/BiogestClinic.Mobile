@@ -18,7 +18,7 @@ class EmployeeDTO {
   final AddressDTO address;
   final String color;
   final int gender;
-  final String? civilState;
+  final CivilStateDTO? civilState;
   final String dateOfBirth;
   final int identificationCardType;
   final String identificationCardNumber;
@@ -95,7 +95,7 @@ class EmployeeDTO {
     address: AddressDTO.fromJson(json['Address'] ?? {}),
     color: json['Color'] ?? '',
     gender: json['Gender'] ?? 0,
-    civilState: json['CivilState'],
+    civilState: CivilStateDTO.fromJson(json['CivilState'] ?? {}),
     dateOfBirth: json['DateOfBirth'] ?? '',
     identificationCardType: json['IdentificationCardType'] ?? 0,
     identificationCardNumber: json['IdentificationCardNumber'] ?? '',
@@ -229,4 +229,36 @@ class ContractTypeDTO extends GroupDTO {
         description: json['Description'] ?? '',
         deleted: json['Deleted'] ?? false,
       );
+}
+
+class CivilStateDTO {
+  final int id;
+  final String name;
+  final int code;
+  final String description;
+  final bool deleted;
+
+  CivilStateDTO({
+    required this.id,
+    required this.name,
+    required this.code,
+    required this.description,
+    required this.deleted,
+  });
+
+  factory CivilStateDTO.fromJson(Map<String, dynamic> json) => CivilStateDTO(
+    id: json['ID'] ?? 0,
+    name: json['Name'] ?? '',
+    code: json['Code'] ?? 0,
+    description: json['Description'] ?? '',
+    deleted: json['Deleted'] ?? false,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'ID': id,
+    'Name': name,
+    'Code': code,
+    'Description': description,
+    'Deleted': deleted,
+  };
 }
