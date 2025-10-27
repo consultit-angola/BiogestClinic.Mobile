@@ -1,4 +1,4 @@
-name: biogest_clinic_movile
+name: biogest_clinic_mobile
 description: 'Mobile application developed in Flutter for users of associated clinics, enabling seamless communication and comprehensive management of their activities. Users can chat with each other, receive and view notifications, view their appointment calendar, and access various administrative features related to their clinic. The main objective of the application is to improve user interaction, organization, and experience by providing a modern, intuitive, and efficient platform.'
 publish_to: 'none'
 version: 0.1.0

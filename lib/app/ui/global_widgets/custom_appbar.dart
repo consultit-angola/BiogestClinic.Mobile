@@ -1,4 +1,4 @@
-import 'package:biogest_clinic_movile/app/data/shared/index.dart';
+import 'package:biogest_clinic_mobile/app/data/shared/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';

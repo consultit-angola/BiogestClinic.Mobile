@@ -1,4 +1,4 @@
-package com.example.biogest_clinic_movile
+package com.example.biogest_clinic_mobile
 
 import io.flutter.embedding.android.FlutterActivity
 
