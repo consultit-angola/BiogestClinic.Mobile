@@ -146,11 +146,11 @@ class ChatDetailsPage extends GetView<ChatController> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!isMine) _buildMessageState(msg),
+                if (!isMine) _buildMessageState(msg, isMine),
                 if (!isMine) const SizedBox(width: 8),
                 _buildMessageText(msg),
                 if (isMine) const SizedBox(width: 8),
-                if (isMine) _buildMessageState(msg),
+                if (isMine) _buildMessageState(msg, isMine),
               ],
             ),
           ),
@@ -165,7 +165,7 @@ class ChatDetailsPage extends GetView<ChatController> {
       child: Text(
         msg.messageText,
         style: const TextStyle(
-          color: Colors.white,
+          color: CustomColors.witheColor,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -173,11 +173,7 @@ class ChatDetailsPage extends GetView<ChatController> {
   }
 
   /// 🔹 Estado y hora del mensaje
-  Widget _buildMessageState(MessageDTO msg) {
-    final isMine =
-        msg.creationUserID ==
-        controller.globalController.authenticatedUser.value?.id;
-
+  Widget _buildMessageState(MessageDTO msg, bool isMine) {
     IconData? icon;
     Color? color;
 
@@ -185,19 +181,19 @@ class ChatDetailsPage extends GetView<ChatController> {
       switch (msg.status) {
         case MessageStatus.sending:
           icon = Icons.access_time;
-          color = Colors.grey[300];
+          color = CustomColors.witheColor;
           break;
         case MessageStatus.sent:
           icon = Icons.check;
-          color = Colors.grey[300];
+          color = CustomColors.witheColor;
           break;
         case MessageStatus.read:
           icon = Icons.done_all;
-          color = Colors.blueAccent;
+          color = CustomColors.witheColor;
           break;
         default:
           icon = Icons.error;
-          color = Colors.redAccent;
+          color = CustomColors.tertiaryColor;
       }
     }
 
@@ -208,7 +204,7 @@ class ChatDetailsPage extends GetView<ChatController> {
           DateFormat('HH:mm').format(msg.creationDate),
           style: TextStyle(
             fontSize: 10,
-            color: Colors.white.withValues(alpha: 0.9),
+            color: CustomColors.witheColor.withValues(alpha: 0.9),
           ),
         ),
         if (isMine && icon != null) ...[
@@ -264,7 +260,7 @@ class ChatDetailsPage extends GetView<ChatController> {
               decoration: InputDecoration(
                 hintText: 'Escrever uma mensagem...',
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: CustomColors.witheColor,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,

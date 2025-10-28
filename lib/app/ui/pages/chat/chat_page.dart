@@ -106,13 +106,18 @@ class ChatPage extends GetView<ChatController> {
           ),
         ),
       ),
-      title: Text(user.name),
+      title: Text(
+        '${user.name} ${user.id == controller.globalController.authenticatedUser.value?.id ? '(Eu)' : ''}',
+      ),
       subtitle: lastMessage != null
-          ? Text(
-              lastMessage,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
+          ? Padding(
+              padding: const EdgeInsets.only(left: 3.0),
+              child: Text(
+                lastMessage,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+              ),
             )
           : null,
       onTap: () {

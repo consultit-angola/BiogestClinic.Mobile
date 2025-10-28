@@ -24,20 +24,15 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
     if (!globalController.isChatControllerLoaded) {
       getUsers();
       globalController.isChatControllerLoaded = true;
     }
   }
 
-  // @override
-  // void onReady() {
-  //   super.onReady();
-  //   _markConversationAsRead();
-  // }
-
   // ────────────────────────────────
-  // USUARIOS
+  // Users
   // ────────────────────────────────
   Future<void> getUsers({bool forceReload = false}) async {
     if (globalController.users.isNotEmpty && !forceReload) return;
@@ -60,7 +55,7 @@ class ChatController extends GetxController {
   }
 
   // ────────────────────────────────
-  // MENSAJES
+  // Messages
   // ────────────────────────────────
   Future<bool?> sendMessage() async {
     final text = inputController.text.trim();
@@ -80,7 +75,7 @@ class ChatController extends GetxController {
     );
 
     final key = message.destinationUserID;
-    globalController.messages.putIfAbsent(key, () => []);
+    globalController.messages.putIfAbsent(key, () => <MessageDTO>[].obs);
     globalController.messages[key]!.add(message);
     globalController.messages.refresh();
     scrollToBottom();
@@ -157,8 +152,19 @@ class ChatController extends GetxController {
     return list;
   }
 
+  Future<void> setMessageMarkAsRead(int messageID) async {
+    try {
+      final resp = await _provider.setMessageMarkAsRead(messageID: messageID);
+      if (!resp['ok']) {
+        Get.snackbar('Error', resp['message']);
+      }
+    } catch (error) {
+      Get.snackbar('Error', '$error');
+    } finally {}
+  }
+
   // ────────────────────────────────
-  // UTILIDADES DE FECHA / SCROLL
+  // Date utilities / Scroll
   // ────────────────────────────────
   String formatDayLabel(DateTime date) {
     final now = DateTime.now();
@@ -187,19 +193,5 @@ class ChatController extends GetxController {
         } catch (_) {}
       }
     });
-  }
-
-  // ────────────────────────────────
-  // MARCAR LEÍDO
-  // ────────────────────────────────
-  Future<void> setMessageMarkAsRead(int messageID) async {
-    try {
-      final resp = await _provider.setMessageMarkAsRead(messageID: messageID);
-      if (!resp['ok']) {
-        Get.snackbar('Error', resp['message']);
-      }
-    } catch (error) {
-      Get.snackbar('Error', '$error');
-    } finally {}
   }
 }

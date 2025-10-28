@@ -20,9 +20,10 @@ class GlobalController extends GetxController {
   final Rxn<UserDTO> authenticatedUser = Rxn<UserDTO>();
   final Rxn<EmployeeDTO> authenticatedEmployee = Rxn<EmployeeDTO>();
   final RxList<UserDTO> users = <UserDTO>[].obs;
-  RxMap<int, List<MessageDTO>> oldMessages = <int, List<MessageDTO>>{}.obs;
-  RxMap<int, List<MessageDTO>> newMessages = <int, List<MessageDTO>>{}.obs;
-  RxMap<int, List<MessageDTO>> messages = <int, List<MessageDTO>>{}.obs;
+  RxMap<int, RxList<MessageDTO>> oldMessages = <int, RxList<MessageDTO>>{}.obs;
+  RxMap<int, RxList<MessageDTO>> newMessages = <int, RxList<MessageDTO>>{}.obs;
+  RxMap<int, RxList<MessageDTO>> messages = <int, RxList<MessageDTO>>{}.obs;
+
   final RxList<NeatCleanCalendarEvent> eventList =
       <NeatCleanCalendarEvent>[].obs;
   var pendingMessages = 0.obs;
@@ -41,13 +42,12 @@ class GlobalController extends GetxController {
     Get.put(CalendarController());
     Get.put(ActivitiesController());
 
-    getMessages(onlyUnread: false);
-    getMessages();
     startTimer();
   }
 
   void startTimer() {
     timer = Timer.periodic(Duration(seconds: 5), (time) {
+      getMessages(onlyUnread: false);
       getMessages();
       getAppts();
     });
@@ -106,7 +106,7 @@ class GlobalController extends GetxController {
         // asegurar existencia de la lista
         final existing = (onlyUnread ? newMessages : oldMessages).putIfAbsent(
           key,
-          () => <MessageDTO>[],
+          () => <MessageDTO>[].obs,
         );
 
         // si ya existe, actualizar (por ejemplo cambiar status o texto)
@@ -120,16 +120,17 @@ class GlobalController extends GetxController {
         // Si el mensaje fue recibido por el usuario actual y viene como no leído,
         // marcar como leído (opcional: hacer batch en vez de uno por uno)
         if (!onlyUnread) {
-          final isForMe =
-              message.destinationUserID == authenticatedUser.value!.id;
-          // Suponiendo que MessageDTO tenga un campo 'isRead' o similar — adapta:
-          if (isForMe && (message.status != MessageStatus.read)) {
-            // actualizamos la propiedad local para que muestre palomita doble
-            message.status = MessageStatus.read;
-            // Llamamos a la API para marcarlo como leído si corresponde
-            // (si tu API tiene endpoint para eso, lo llamamos; si no, omítelo)
-            // setMarkAsRead(message.id);
-          }
+          message.status = MessageStatus.read;
+          // final isForMe =
+          //     message.destinationUserID == authenticatedUser.value!.id;
+          // // Suponiendo que MessageDTO tenga un campo 'isRead' o similar — adapta:
+          // if (isForMe && (message.status != MessageStatus.read)) {
+          //   // actualizamos la propiedad local para que muestre palomita doble
+          //   message.status = MessageStatus.read;
+          //   // Llamamos a la API para marcarlo como leído si corresponde
+          //   // (si tu API tiene endpoint para eso, lo llamamos; si no, omítelo)
+          //   // setMarkAsRead(message.id);
+          // }
         }
       }
 
@@ -142,20 +143,55 @@ class GlobalController extends GetxController {
         pendingMessages.value = allNew <= 99 ? allNew : 99;
       }
 
-      // actualizar mensajes
+      // // actualizar mensajes
+      // (onlyUnread ? newMessages : oldMessages).forEach((key, newList) {
+      //   final existingList = messages[key] ?? [];
+      //   var different = [];
+
+      //   // Filtra los mensajes que aún no existen por ID
+      //   different.addAll(
+      //     newList.where(
+      //       (itemA) => !existingList.any((itemB) => itemB.id == itemA.id),
+      //     ),
+      //   );
+
+      //   if (different.isNotEmpty) {
+      //     messages[key] = RxList<MessageDTO>([...existingList, ...different]);
+      //   }
+      // });
       (onlyUnread ? newMessages : oldMessages).forEach((key, newList) {
-        final existingList = messages[key] ?? [];
-        var different = [];
+        final existingList = messages[key]?.toList() ?? [];
 
-        // Filtra los mensajes que aún no existen por ID
-        different.addAll(
-          newList.where(
-            (itemA) => !existingList.any((itemB) => itemB.id == itemA.id),
-          ),
-        );
+        // Creamos una nueva lista fusionada
+        final mergedList = newList.map((newMsg) {
+          // Buscamos si ya existía un mensaje con el mismo ID
+          final oldMsg = existingList.firstWhere(
+            (m) => m.id == newMsg.id,
+            orElse: () => newMsg,
+          );
 
-        if (different.isNotEmpty) {
-          messages[key] = [...existingList, ...different];
+          // Si existía, copiamos el status anterior
+          if (oldMsg != newMsg) {
+            return MessageDTO(
+              id: newMsg.id,
+              messageText: newMsg.messageText,
+              creationDate: newMsg.creationDate,
+              creationUserID: newMsg.creationUserID,
+              destinationUserID: newMsg.destinationUserID,
+              attachments: newMsg.attachments,
+              status: oldMsg.status, // ✅ mantenemos el estado anterior
+            );
+          } else {
+            return newMsg; // mensaje nuevo
+          }
+        }).toList();
+
+        // // Guardamos la lista fusionada reactivamente
+        // if (mergedList.isNotEmpty) {
+        //   messages[key] = RxList<MessageDTO>(mergedList);
+        // }
+        if (!mergedListEquals(existingList, mergedList)) {
+          messages[key]?.assignAll(mergedList);
         }
       });
 
@@ -163,9 +199,19 @@ class GlobalController extends GetxController {
       for (var key in messages.keys) {
         messages[key]!.sort((a, b) => a.creationDate.compareTo(b.creationDate));
       }
+
+      messages.refresh();
     } else {
       Get.snackbar('Error', resp['message']);
     }
+  }
+
+  bool mergedListEquals(List<MessageDTO> a, List<MessageDTO> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id || a[i].status != b[i].status) return false;
+    }
+    return true;
   }
 
   Future<void> getAppts() async {
