@@ -41,5 +41,10 @@ abstract class AppPages {
       page: () => const ActivitiesPage(),
       binding: ActivitiesBinding(),
     ),
+    GetPage(
+      name: Routes.user,
+      page: () => const UserPage(),
+      binding: UserBinding(),
+    ),
   ];
 }

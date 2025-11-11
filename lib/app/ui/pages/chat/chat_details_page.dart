@@ -90,10 +90,7 @@ class ChatDetailsPage extends GetView<ChatController> {
 
                   final isDifferentDay =
                       prevMsg == null ||
-                      !controller.isSameDay(
-                        msg.creationDate,
-                        prevMsg.creationDate,
-                      );
+                      !isSameDay(msg.creationDate, prevMsg.creationDate);
 
                   return Column(
                     children: [
@@ -227,7 +224,7 @@ class ChatDetailsPage extends GetView<ChatController> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            controller.formatDayLabel(date),
+            formatDayLabel(date),
             style: const TextStyle(
               fontSize: 12,
               color: Colors.black54,
@@ -246,13 +243,13 @@ class ChatDetailsPage extends GetView<ChatController> {
       color: Colors.grey[200],
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {},
-            child: Icon(
-              Icons.attach_file_rounded,
-              color: CustomColors.secondaryColor,
-            ),
-          ),
+          // GestureDetector(
+          //   onTap: () {},
+          //   child: Icon(
+          //     Icons.attach_file_rounded,
+          //     color: CustomColors.secondaryColor,
+          //   ),
+          // ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(

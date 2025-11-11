@@ -23,6 +23,9 @@ class GlobalController extends GetxController {
   RxMap<int, RxList<MessageDTO>> oldMessages = <int, RxList<MessageDTO>>{}.obs;
   RxMap<int, RxList<MessageDTO>> newMessages = <int, RxList<MessageDTO>>{}.obs;
   RxMap<int, RxList<MessageDTO>> messages = <int, RxList<MessageDTO>>{}.obs;
+  final RxList<AlarmDTO> programmedAlarms = <AlarmDTO>[].obs;
+  final RxMap<int, dynamic> programmedAlarmsMap = <int, dynamic>{}.obs;
+  RxList<AlarmInstanceDTO> alarmInstances = <AlarmInstanceDTO>[].obs;
 
   final RxList<NeatCleanCalendarEvent> eventList =
       <NeatCleanCalendarEvent>[].obs;
@@ -33,7 +36,9 @@ class GlobalController extends GetxController {
 
   var isCalendarControllerLoaded = false;
   var isChatControllerLoaded = false;
-  Timer? timer;
+  Timer? timerChats;
+  Timer? timerAlarms;
+  Timer? timerAppts;
 
   void initControllers() {
     Get.put(HomeController());
@@ -42,19 +47,39 @@ class GlobalController extends GetxController {
     Get.put(CalendarController());
     Get.put(ActivitiesController());
 
-    startTimer();
+    getProgrammedAlarms();
+    startChatTimer();
+    startAlarmTimer();
+    startApptsTimer();
   }
 
-  void startTimer() {
-    timer = Timer.periodic(Duration(seconds: 5), (time) {
+  void startChatTimer() {
+    getMessages(onlyUnread: false);
+    getMessages();
+    timerChats = Timer.periodic(Duration(seconds: 5), (time) {
       getMessages(onlyUnread: false);
       getMessages();
+    });
+  }
+
+  void startAlarmTimer() async {
+    timerAlarms = Timer.periodic(Duration(minutes: 5), (time) {
+      getActiveInstances();
+      getAppts();
+    });
+  }
+
+  void startApptsTimer() {
+    getAppts();
+    timerAppts = Timer.periodic(Duration(minutes: 10), (time) {
       getAppts();
     });
   }
 
   void stopTimer() {
-    timer?.cancel();
+    timerChats?.cancel();
+    timerAlarms?.cancel();
+    timerAppts?.cancel();
   }
 
   void logout() async {
@@ -202,7 +227,7 @@ class GlobalController extends GetxController {
 
       messages.refresh();
     } else {
-      Get.snackbar('Error', resp['message']);
+      Get.snackbar('Error', resp['message'] ?? 'Erro não identificado');
     }
   }
 
@@ -212,6 +237,61 @@ class GlobalController extends GetxController {
       if (a[i].id != b[i].id || a[i].status != b[i].status) return false;
     }
     return true;
+  }
+
+  Future<void> getActiveInstances() async {
+    final data = {
+      'withAlarmInstancesToNotify': true,
+      'withAllAlarmInstances': false,
+      'updateLastNotificationDate': false,
+      'alarmIDToUpdateLastNotificationDate': -1,
+    };
+    Map<String, dynamic> resp = await _provider.getActiveInstances(data);
+    if (resp['ok']) {
+      // 🔹 Limpia todas las listas de instancias antes de volver a llenarlas
+      programmedAlarmsMap.forEach((key, value) {
+        (value['instances'] as List).clear();
+        value['length'] = 0;
+      });
+
+      // 🔹 Asigna las nuevas instancias
+      alarmInstances.value = resp['data'] as List<AlarmInstanceDTO>;
+
+      // 🔹 Vuelve a llenar las instancias agrupadas
+      for (var instance in alarmInstances) {
+        programmedAlarmsMap[instance.alarmId]!['instances'].add(instance);
+      }
+
+      // 🔹 Recalcula los conteos
+      pendingAlarms.value = 0;
+      programmedAlarmsMap.forEach((key, value) {
+        value['length'] = (value['instances'] as List).length;
+        if (value['length'] > 0) pendingAlarms.value++;
+      });
+    } else {
+      Get.snackbar('Error', resp['message']);
+    }
+  }
+
+  getProgrammedAlarms() async {
+    try {
+      EasyLoading.show();
+      Map<String, dynamic> resp = await _provider.getProgrammedAlarms();
+      if (resp['ok']) {
+        programmedAlarms.value = resp['data'] as List<AlarmDTO>;
+        programmedAlarmsMap.value = {
+          for (var p in programmedAlarms)
+            if (p.id != null) p.id!: {'alarm': p, 'instances': []},
+        };
+        getActiveInstances();
+      } else {
+        Get.snackbar('Error', resp['message']);
+      }
+    } catch (error) {
+      Get.snackbar('Error', '$error');
+    } finally {
+      EasyLoading.dismiss();
+    }
   }
 
   Future<void> getAppts() async {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
@@ -164,19 +163,8 @@ class ChatController extends GetxController {
   }
 
   // ────────────────────────────────
-  // Date utilities / Scroll
+  // Scroll
   // ────────────────────────────────
-  String formatDayLabel(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date).inDays;
-
-    if (diff == 0) return 'Hoy';
-    if (diff == 1) return 'Ayer';
-    return DateFormat('dd/MM/yyyy').format(date);
-  }
-
-  bool isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   void scrollToBottom({int durationMs = 250}) {
     if (!scrollController.hasClients) return;
