@@ -53,11 +53,9 @@ class GlobalController extends GetxController {
     startApptsTimer();
   }
 
-  void startChatTimer() {
-    getMessages(onlyUnread: false);
-    getMessages();
-    timerChats = Timer.periodic(Duration(seconds: 5), (time) {
-      getMessages(onlyUnread: false);
+  void startChatTimer() async {
+    await Future.wait([getMessages(onlyUnread: false), getMessages()]);
+    timerChats = Timer.periodic(const Duration(seconds: 5), (time) {
       getMessages();
     });
   }
@@ -103,7 +101,7 @@ class GlobalController extends GetxController {
     }
   }
 
-  void getMessages({
+  Future<void> getMessages({
     DateTime? startDate,
     DateTime? endDate,
     bool onlyUnread = true,
@@ -119,8 +117,14 @@ class GlobalController extends GetxController {
     Map<String, dynamic> resp = await _provider.getMessages(data);
 
     if (resp['ok']) {
-      (onlyUnread ? newMessages : oldMessages).clear();
       var auxMessages = resp['data'] as List<MessageDTO>;
+
+      // actualizar contador pending
+      if (onlyUnread) {
+        pendingMessages.value = auxMessages.length <= 99
+            ? auxMessages.length
+            : 99;
+      }
 
       // Insertar/actualizar incrementalmente
       for (var message in auxMessages) {
@@ -128,104 +132,45 @@ class GlobalController extends GetxController {
             ? message.creationUserID
             : message.destinationUserID;
 
-        // asegurar existencia de la lista
-        final existing = (onlyUnread ? newMessages : oldMessages).putIfAbsent(
-          key,
-          () => <MessageDTO>[].obs,
-        );
+        // asegurar existencia de la lista en old/new
+        final targetMap = onlyUnread ? newMessages : oldMessages;
+        final existing = targetMap.putIfAbsent(key, () => <MessageDTO>[].obs);
 
         // si ya existe, actualizar (por ejemplo cambiar status o texto)
-        final idx = existing.indexWhere((m) => m == message);
+        final idx = existing.indexWhere((m) => m.id == message.id);
         if (idx != -1) {
           existing[idx] = message;
         } else {
           existing.add(message);
         }
 
-        // Si el mensaje fue recibido por el usuario actual y viene como no leído,
-        // marcar como leído (opcional: hacer batch en vez de uno por uno)
-        if (!onlyUnread) {
-          message.status = MessageStatus.read;
-          // final isForMe =
-          //     message.destinationUserID == authenticatedUser.value!.id;
-          // // Suponiendo que MessageDTO tenga un campo 'isRead' o similar — adapta:
-          // if (isForMe && (message.status != MessageStatus.read)) {
-          //   // actualizamos la propiedad local para que muestre palomita doble
-          //   message.status = MessageStatus.read;
-          //   // Llamamos a la API para marcarlo como leído si corresponde
-          //   // (si tu API tiene endpoint para eso, lo llamamos; si no, omítelo)
-          //   // setMarkAsRead(message.id);
-          // }
-        }
-      }
+        // fusionar con lista principal de mensajes sin reemplazarla
+        final mainList = messages.putIfAbsent(key, () => <MessageDTO>[].obs);
 
-      // refrescar observables
-      (onlyUnread ? newMessages : oldMessages).refresh();
-
-      // actualizar contador pending
-      if (onlyUnread) {
-        final allNew = auxMessages.length;
-        pendingMessages.value = allNew <= 99 ? allNew : 99;
-      }
-
-      // // actualizar mensajes
-      // (onlyUnread ? newMessages : oldMessages).forEach((key, newList) {
-      //   final existingList = messages[key] ?? [];
-      //   var different = [];
-
-      //   // Filtra los mensajes que aún no existen por ID
-      //   different.addAll(
-      //     newList.where(
-      //       (itemA) => !existingList.any((itemB) => itemB.id == itemA.id),
-      //     ),
-      //   );
-
-      //   if (different.isNotEmpty) {
-      //     messages[key] = RxList<MessageDTO>([...existingList, ...different]);
-      //   }
-      // });
-      (onlyUnread ? newMessages : oldMessages).forEach((key, newList) {
-        final existingList = messages[key]?.toList() ?? [];
-
-        // Creamos una nueva lista fusionada
-        final mergedList = newList.map((newMsg) {
-          // Buscamos si ya existía un mensaje con el mismo ID
-          final oldMsg = existingList.firstWhere(
-            (m) => m.id == newMsg.id,
-            orElse: () => newMsg,
-          );
-
-          // Si existía, copiamos el status anterior
-          if (oldMsg != newMsg) {
-            return MessageDTO(
+        for (var newMsg in existing) {
+          final mIdx = mainList.indexWhere((m) => m.id == newMsg.id);
+          if (mIdx != -1) {
+            // mantener el estado anterior
+            mainList[mIdx] = MessageDTO(
               id: newMsg.id,
               messageText: newMsg.messageText,
               creationDate: newMsg.creationDate,
               creationUserID: newMsg.creationUserID,
               destinationUserID: newMsg.destinationUserID,
               attachments: newMsg.attachments,
-              status: oldMsg.status, // ✅ mantenemos el estado anterior
+              status: mainList[mIdx].status,
             );
           } else {
-            return newMsg; // mensaje nuevo
+            mainList.add(newMsg);
           }
-        }).toList();
-
-        // // Guardamos la lista fusionada reactivamente
-        // if (mergedList.isNotEmpty) {
-        //   messages[key] = RxList<MessageDTO>(mergedList);
-        // }
-        if (!mergedListEquals(existingList, mergedList)) {
-          messages[key]?.assignAll(mergedList);
         }
-      });
 
-      // ordenar cada conversación por fecha ascendente (antiguos -> nuevos)
-      for (var key in messages.keys) {
-        messages[key]!.sort((a, b) => a.creationDate.compareTo(b.creationDate));
+        // ordenar por fecha
+        mainList.sort((a, b) => a.creationDate.compareTo(b.creationDate));
+
+        // refresca solo esta RxList
+        mainList.refresh();
       }
-
-      messages.refresh();
     } else {
       Get.snackbar('Error', resp['message'] ?? 'Erro não identificado');
     }

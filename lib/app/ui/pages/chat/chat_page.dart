@@ -36,7 +36,10 @@ class ChatPage extends GetView<ChatController> {
                   children: [
                     customAppbar(),
                     search(),
-                    Obx(() => lastMessages()),
+                    Obx(() {
+                      final messagesMap = controller.globalController.messages;
+                      return lastMessages(messagesMap);
+                    }),
                   ],
                 ),
                 customMenu(),
@@ -48,27 +51,27 @@ class ChatPage extends GetView<ChatController> {
     );
   }
 
-  Widget lastMessages() {
+  Widget lastMessages(RxMap<int, RxList<MessageDTO>> messagesMap) {
     var lastMessages = <Widget>[];
 
-    for (final message in controller.globalController.messages.entries) {
+    for (final entry in messagesMap.entries) {
       final user = controller.globalController.users.firstWhereOrNull(
-        (u) => u.id == message.key,
+        (u) => u.id == entry.key,
       );
-      final List<MessageDTO> chatMessages = message.value;
-      var pendingMessages = 0;
-      chatMessages
-          .map(
-            (m) => {
-              if (m.status == MessageStatus.sent &&
-                  m.destinationUserID ==
-                      controller.globalController.authenticatedUser.value!.id)
-                {pendingMessages++},
-            },
+      final chatMessages = entry.value;
+      if (chatMessages.isEmpty) continue;
+
+      var pendingMessages = chatMessages
+          .where(
+            (m) =>
+                m.status == MessageStatus.sent &&
+                m.destinationUserID ==
+                    controller.globalController.authenticatedUser.value?.id,
           )
-          .toList();
+          .length;
+
       if (user != null) {
-        final lastMessage = chatMessages[chatMessages.length - 1];
+        final lastMessage = chatMessages.last;
         lastMessages.add(
           contact(
             user: user,
