@@ -193,6 +193,10 @@ class ChatPage extends GetView<ChatController> {
             fillColor: CustomColors.witheColor,
             border: InputBorder.none,
             prefixIcon: const Icon(Icons.search),
+            suffixIcon: GestureDetector(
+              // onTapDown: (){},
+              child: Icon(Icons.group_add_sharp, size: Get.width * 0.08),
+            ),
           ),
           suggestions: controller.globalController.users
               .map(
