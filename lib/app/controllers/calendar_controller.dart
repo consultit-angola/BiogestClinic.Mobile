@@ -7,8 +7,6 @@ import 'index.dart';
 class CalendarController extends GetxController {
   static CalendarController get to => Get.find<CalendarController>();
   final globalController = GlobalController.to;
-  final ValueChanged<DateTime>? onDateSelected = null;
-  final ValueChanged<DateTime>? onMonthChanged = null;
   final ValueChanged<bool>? onExpandStateChanged = null;
   final ValueChanged? onRangeSelected = null;
   final ValueChanged<NeatCleanCalendarEvent>? onEventSelected = null;
@@ -18,9 +16,15 @@ class CalendarController extends GetxController {
   // void onInit() {
   //   super.onInit();
 
-  //   if (!globalController.isCalendarControllerLoaded) {
-  //     getAppts();
-  //     globalController.isCalendarControllerLoaded = true;
-  //   }
+  //   // if (!globalController.isCalendarControllerLoaded) {
+  //   //   getAppts();
+  //   //   globalController.isCalendarControllerLoaded = true;
+  //   // }
   // }
+
+  void onMonthChanged(DateTime month) {
+    final startDate = DateTime.utc(month.year, month.month, 1, 0, 0, 0);
+    final endDate = DateTime.utc(month.year, month.month + 1, 0, 23, 59, 59);
+    globalController.getAppts(pStartDate: startDate, pEndDate: endDate);
+  }
 }

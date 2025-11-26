@@ -239,15 +239,23 @@ class GlobalController extends GetxController {
     }
   }
 
-  Future<void> getAppts() async {
+  Future<void> getAppts({DateTime? pStartDate, DateTime? pEndDate}) async {
+    final now = DateTime.now();
+    final startDate =
+        pStartDate?.toIso8601String() ??
+        DateTime.utc(now.year, now.month, 1, 0, 0, 0).toIso8601String();
+    final endDate =
+        pEndDate?.toIso8601String() ??
+        DateTime.utc(now.year, now.month + 1, 0, 23, 59, 59).toIso8601String();
+
     final data = {
       // TypeEnumList: 0 - NotDefined, 1 - Appointment, 2 - Internment, 3 - Surgery, 4 - Emergency, 5 - Urgency
       'TypeEnumList': [1, 4, 5],
       'EmployeeIDList': [authenticatedEmployee.value!.id],
       'RoomID': null,
       'StoreID': _pref.storeID,
-      'ScheduleStartDate': DateTime(2025, 10, 1).toUtc().toIso8601String(),
-      'ScheduleEndDate': DateTime(2025, 10, 31).toUtc().toIso8601String(),
+      'ScheduleStartDate': startDate,
+      'ScheduleEndDate': endDate,
       'OnlyNotCanceled': null,
     };
     Map<String, dynamic> resp = await _provider.getAppts(data);

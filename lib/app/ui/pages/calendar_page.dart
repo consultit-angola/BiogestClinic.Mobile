@@ -71,6 +71,7 @@ class CalendarPage extends GetView<CalendarController> {
           fontWeight: FontWeight.w800,
           fontSize: 11,
         ),
+        onMonthChanged: controller.onMonthChanged,
       ),
     );
   }
