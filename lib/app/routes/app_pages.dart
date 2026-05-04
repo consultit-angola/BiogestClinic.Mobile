@@ -46,5 +46,6 @@ abstract class AppPages {
       page: () => const UserPage(),
       binding: UserBinding(),
     ),
+    GetPage(name: Routes.apiSettings, page: () => const ApiSettingsPage()),
   ];
 }

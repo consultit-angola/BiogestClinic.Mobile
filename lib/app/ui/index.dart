@@ -1,6 +1,7 @@
 export 'global_widgets/custom_appbar.dart';
 export 'global_widgets/custom_menu.dart';
 export 'pages/alarm/alarm_page.dart';
+export 'pages/api_settings_page.dart';
 export 'pages/chat/chat_page.dart';
 export 'pages/chat/chat_details_page.dart';
 export 'pages/user/user_page.dart';

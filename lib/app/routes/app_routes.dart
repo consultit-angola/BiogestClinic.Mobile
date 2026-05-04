@@ -8,4 +8,5 @@ abstract class Routes {
   static const alarm = '/alarm';
   static const activities = '/activities';
   static const user = '/user';
+  static const apiSettings = '/api-settings';
 }

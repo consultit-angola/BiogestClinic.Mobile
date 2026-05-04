@@ -17,6 +17,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Preferences {
   static String get shphomelocationaddress => "HOME_LOCATION_ADDRESS";
   static String get shpworklocationaddress => "WORK_LOCATION_ADDRESS";
+  static String get selectedApiUrlKey => "SELECTED_API_URL";
+  static String get selectedApiNameKey => "SELECTED_API_NAME";
   static final Preferences _instancia = Preferences._internal();
 
   factory Preferences() {
@@ -33,8 +35,12 @@ class Preferences {
 
   clear() async {
     var aux = skipSplash;
-    _prefs?.clear();
+    var auxApiUrl = apiUrl;
+    var auxApiName = apiName;
+    await _prefs?.clear();
     skipSplash = aux;
+    apiUrl = auxApiUrl;
+    apiName = auxApiName;
   }
 
   bool get skipSplash {
@@ -131,6 +137,22 @@ class Preferences {
 
   set userState(String value) {
     _prefs?.setString('userState', value);
+  }
+
+  String get apiUrl {
+    return _prefs?.getString(selectedApiUrlKey) ?? '';
+  }
+
+  set apiUrl(String value) {
+    _prefs?.setString(selectedApiUrlKey, value);
+  }
+
+  String get apiName {
+    return _prefs?.getString(selectedApiNameKey) ?? '';
+  }
+
+  set apiName(String value) {
+    _prefs?.setString(selectedApiNameKey, value);
   }
 
   // Future<void> setPredefinedLocationAddress(LocationAddress locationAddress,

@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:biogest_clinic_mobile/app/data/models/index.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import '../shared/preferences.dart';
+import '../shared/api_config.dart';
 
 class Provider {
   final Preferences _preferences = Preferences();
   final logger = Logger();
+
+  String get _baseApiUrl => ApiConfig.activeApiUrl;
 
   Map<String, String> getHeaderJson() {
     Map<String, String> dataHeader = {
@@ -23,7 +25,7 @@ class Provider {
     try {
       // get /api/Store
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/Store',
+        '$_baseApiUrl/Store',
       ).replace(queryParameters: {'withDeleted': 'false'});
       final resp = await http.get(uri, headers: getHeaderJson());
       var stores = <StoreDTO>[];
@@ -52,14 +54,13 @@ class Provider {
   }) async {
     try {
       // post /api/Auth/AuthenticateUser
-      final uri = Uri.parse('${dotenv.env['API_URL']}/Auth/AuthenticateUser')
-          .replace(
-            queryParameters: {
-              "login": username,
-              "password": password,
-              "storeID": storeID.toString(),
-            },
-          );
+      final uri = Uri.parse('$_baseApiUrl/Auth/AuthenticateUser').replace(
+        queryParameters: {
+          "login": username,
+          "password": password,
+          "storeID": storeID.toString(),
+        },
+      );
 
       final result = await http.post(uri, headers: getHeaderJson());
 
@@ -100,7 +101,7 @@ class Provider {
     try {
       // post /api/Auth/Logout
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/Auth/Logout',
+        '$_baseApiUrl/Auth/Logout',
       ).replace(queryParameters: {'userID': _preferences.userID.toString()});
 
       final resp = await http.post(uri, headers: getHeaderJson());
@@ -119,7 +120,7 @@ class Provider {
   Future<Map<String, dynamic>> refreshToken() async {
     try {
       // put /api/Auth/RefreshToken
-      final uri = Uri.parse('${dotenv.env['API_URL']}/Auth/RefreshToken');
+      final uri = Uri.parse('$_baseApiUrl/Auth/RefreshToken');
       final resp = await http.put(uri, headers: getHeaderJson());
       if (resp.statusCode == 401) {
         var result = await login(
@@ -174,7 +175,7 @@ class Provider {
     try {
       // get /api/User
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/User',
+        '$_baseApiUrl/User',
       ).replace(queryParameters: {'withDeleted': 'false'});
 
       final resp = await http.get(uri, headers: getHeaderJson());
@@ -201,7 +202,7 @@ class Provider {
     try {
       // put /api/EmailSMS/ChatMessageSearch
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/EmailSMS/ChatMessageSearch',
+        '$_baseApiUrl/EmailSMS/ChatMessageSearch',
       );
 
       final resp = await http.put(
@@ -241,7 +242,7 @@ class Provider {
     try {
       // post /api/EmailSMS/ChatMessageInsert
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/EmailSMS/ChatMessageInsert',
+        '$_baseApiUrl/EmailSMS/ChatMessageInsert',
       );
 
       final resp = await http.post(
@@ -269,7 +270,7 @@ class Provider {
     try {
       // get /api/EmailSMS/ChatMessageMarkAsRead/{ID}
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/EmailSMS/ChatMessageMarkAsRead/$messageID',
+        '$_baseApiUrl/EmailSMS/ChatMessageMarkAsRead/$messageID',
       );
 
       final resp = await http.get(uri, headers: getHeaderJson());
@@ -293,7 +294,7 @@ class Provider {
   Future<Map<String, dynamic>> getProgrammedAlarms() async {
     try {
       // get /api/Alarm
-      final uri = Uri.parse('${dotenv.env['API_URL']}/Alarm');
+      final uri = Uri.parse('$_baseApiUrl/Alarm');
 
       final resp = await http.get(uri, headers: getHeaderJson());
 
@@ -321,10 +322,9 @@ class Provider {
   ) async {
     try {
       // get /api/Alarm/GetActiveInstances
-      final uri = Uri.parse('${dotenv.env['API_URL']}/Alarm/GetActiveInstances')
-          .replace(
-            queryParameters: params.map((k, v) => MapEntry(k, v.toString())),
-          );
+      final uri = Uri.parse('$_baseApiUrl/Alarm/GetActiveInstances').replace(
+        queryParameters: params.map((k, v) => MapEntry(k, v.toString())),
+      );
 
       final resp = await http.get(uri, headers: getHeaderJson());
 
@@ -353,7 +353,7 @@ class Provider {
     try {
       // put /api/Appointment/SearchAppointments
       final uri = Uri.parse(
-        '${dotenv.env['API_URL']}/Appointment/SearchAppointments',
+        '$_baseApiUrl/Appointment/SearchAppointments',
       );
 
       final resp = await http.put(

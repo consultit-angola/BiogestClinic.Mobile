@@ -9,6 +9,8 @@ import '../index.dart';
 
 Widget customAppbar({bool showSettings = false}) {
   final menuController = CustomMenuController();
+  final user = GlobalController.to.authenticatedUser.value;
+  final canManageApi = user != null && user.id == 1;
   return SizedBox(
     width: Get.width,
     // Altura total para permitir el logo centrado
@@ -74,6 +76,17 @@ Widget customAppbar({bool showSettings = false}) {
                             ],
                           ),
                         ),
+                        if (canManageApi)
+                          PopupMenuItem(
+                            value: 'changeApi',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cloud_sync_outlined),
+                                SizedBox(width: Get.width * 0.02),
+                                const Text('Alterar API'),
+                              ],
+                            ),
+                          ),
                         PopupMenuItem(
                           value: 'logout',
                           child: Row(
@@ -99,6 +112,9 @@ Widget customAppbar({bool showSettings = false}) {
                           Preferences().skipSplash = false;
                           Get.snackbar('Sucesso', 'Cache limpo com sucesso');
                           Get.offAllNamed(Routes.splash);
+                          break;
+                        case 'changeApi':
+                          Get.toNamed(Routes.apiSettings);
                           break;
                       }
                     });
