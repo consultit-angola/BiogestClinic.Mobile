@@ -9,6 +9,7 @@ class ApiConfig {
     'Test',
     'HPLS',
     'ClinicaMaster',
+    'Afrodente',
   ];
   static const String fallbackBaseUrl =
       'https://biogestclinic.consultit-angola.com/Biogest.WebAPI';

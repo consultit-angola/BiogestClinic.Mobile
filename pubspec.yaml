@@ -23,7 +23,7 @@ dependencies:
   logger: ^2.6.2
   path_provider: ^2.1.5
   permission_handler: ^12.0.1
-  searchfield: ^1.3.5
+  searchfield: ^2.0.0
   shared_preferences: ^2.5.3
 
 dev_dependencies:
