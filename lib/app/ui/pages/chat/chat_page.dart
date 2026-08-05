@@ -15,6 +15,7 @@ class ChatPage extends GetView<ChatController> {
   Widget build(BuildContext context) {
     return GetBuilder<ChatController>(
       builder: (chatController) => Scaffold(
+        drawer: customDrawer(),
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [

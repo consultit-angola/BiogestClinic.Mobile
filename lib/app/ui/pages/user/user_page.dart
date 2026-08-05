@@ -11,6 +11,7 @@ class UserPage extends GetView<UserController> {
   Widget build(BuildContext context) {
     return GetBuilder<UserController>(
       builder: (userController) => Scaffold(
+        drawer: customDrawer(),
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [

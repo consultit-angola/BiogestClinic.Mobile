@@ -22,7 +22,6 @@ void main() async {
   Get.put(LoginController());
   Get.put(CustomMenuController());
 
-  configLoading();
   runApp(const MainApp());
 }
 
@@ -74,14 +73,15 @@ void configLoading() {
   EasyLoading.instance
     ..displayDuration = const Duration(milliseconds: 2000)
     ..indicatorType = EasyLoadingIndicatorType.fadingCircle
-    ..loadingStyle = EasyLoadingStyle.dark
+    ..loadingStyle = EasyLoadingStyle.custom
+    ..maskType = EasyLoadingMaskType.custom
     ..indicatorSize = 45.0
     ..radius = 10.0
-    ..progressColor = Colors.yellow
-    ..backgroundColor = Colors.green
-    ..indicatorColor = Colors.yellow
-    ..textColor = Colors.yellow
-    ..maskColor = Colors.blue.withValues(alpha: 0.5)
+    ..progressColor = Colors.white
+    ..backgroundColor = Colors.black.withValues(alpha: 0.35)
+    ..indicatorColor = Colors.white
+    ..textColor = Colors.white
+    ..maskColor = Colors.black.withValues(alpha: 0.02)
     ..userInteractions = false
     ..dismissOnTap = false
     ..customAnimation = CustomAnimation();

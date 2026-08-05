@@ -1,4 +1,5 @@
 export 'global_widgets/custom_appbar.dart';
+export 'global_widgets/custom_drawer.dart';
 export 'global_widgets/custom_menu.dart';
 export 'global_widgets/custom_select_field.dart';
 export 'pages/alarm/alarm_page.dart';
@@ -9,6 +10,7 @@ export 'pages/user/user_page.dart';
 export 'pages/activities/activities_page.dart';
 export 'pages/calendar/calendar_page.dart';
 export 'pages/home/home_page.dart';
+export 'pages/dashboard/dashboard_page.dart';
 export 'pages/login/login_page.dart';
 export 'pages/splash/splash_page.dart';
 export 'utils/custom_colors.dart';

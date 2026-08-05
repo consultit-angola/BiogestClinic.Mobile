@@ -15,6 +15,7 @@ class LoginController extends GetxController {
   static LoginController get to => Get.find<LoginController>();
   final formKey = GlobalKey<FormBuilderState>();
   RxBool mostrarPass = false.obs;
+  RxBool rememberSession = true.obs;
   final Provider _provider = Provider();
 
   final Preferences _pref = Preferences();
@@ -22,6 +23,7 @@ class LoginController extends GetxController {
 
   List<StoreDTO> stores = [];
   int? selectedStoreID;
+  String selectedStoreName = '';
 
   RxBool tryLogin = true.obs;
 
@@ -45,6 +47,9 @@ class LoginController extends GetxController {
       username = formKey.currentState!.fields['username']!.value;
       password = formKey.currentState!.fields['password']!.value;
       selectedStoreID = (formKey.currentState!.fields['store']!.value)?.id;
+      selectedStoreName =
+          (formKey.currentState!.fields['store']!.value as StoreDTO?)?.name ??
+          '';
     }
 
     if (username != '' &&
@@ -93,10 +98,19 @@ class LoginController extends GetxController {
         }
 
         if (resp['ok']) {
+          if (!rememberSession.value) {
+            _pref.username = '';
+            _pref.pass = '';
+            _pref.storeID = -1;
+            _pref.storeName = '';
+          } else {
+            _pref.storeName = selectedStoreName;
+          }
           final authResponse = resp['data'] as AuthResponseDTO;
           globalController.authenticatedUser.value = authResponse.userInfo;
 
           globalController.authenticatedEmployee.value = authResponse.employee;
+          globalController.selectedStoreName.value = selectedStoreName;
           globalController.activePermissions.assignAll(
             authResponse.activePermissions,
           );
@@ -125,6 +139,7 @@ class LoginController extends GetxController {
   Future<void> tryAutoLogin() async {
     if (_pref.username != '' && _pref.pass != '' && _pref.storeID != -1) {
       selectedStoreID = _pref.storeID;
+      selectedStoreName = _pref.storeName;
       login(username: _pref.username, password: _pref.pass);
     } else {
       tryLogin.value = false;

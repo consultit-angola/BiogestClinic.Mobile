@@ -12,6 +12,7 @@ class CalendarPage extends GetView<CalendarController> {
   Widget build(BuildContext context) {
     return GetBuilder<CalendarController>(
       builder: (calendarController) => Scaffold(
+        drawer: customDrawer(),
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [

@@ -11,6 +11,7 @@ class AlarmPage extends GetView<AlarmController> {
   Widget build(BuildContext context) {
     return GetBuilder<AlarmController>(
       builder: (alarmController) => Scaffold(
+        drawer: customDrawer(),
         resizeToAvoidBottomInset: false,
         body: Container(
           decoration: BoxDecoration(

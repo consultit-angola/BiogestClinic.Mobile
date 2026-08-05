@@ -120,7 +120,7 @@ class _MySplashPageState extends State<MySplashPage>
           ),
           Column(
             children: [
-              customAppbar(),
+              customAppbar(showUserMenu: false),
               Expanded(child: content(widget.splashController)),
             ],
           ),

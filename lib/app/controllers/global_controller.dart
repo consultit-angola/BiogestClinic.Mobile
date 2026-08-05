@@ -24,6 +24,7 @@ class GlobalController extends GetxController {
   RxBool isAuthenticated = false.obs;
   final Rxn<UserDTO> authenticatedUser = Rxn<UserDTO>();
   final Rxn<EmployeeDTO> authenticatedEmployee = Rxn<EmployeeDTO>();
+  final RxString selectedStoreName = ''.obs;
   final RxList<int> activePermissions = <int>[].obs;
   final Map<String, List<EnumEntryDTO>> enumEntries = {};
   final RxList<UserDTO> users = <UserDTO>[].obs;
@@ -214,6 +215,7 @@ class GlobalController extends GetxController {
     stopTimer();
     authenticatedUser.value = null;
     authenticatedEmployee.value = null;
+    selectedStoreName.value = '';
     activePermissions.clear();
     enumEntries.clear();
     calendarFilters.clear();

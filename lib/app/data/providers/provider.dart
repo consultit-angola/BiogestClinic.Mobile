@@ -522,4 +522,33 @@ class Provider {
       return {'ok': false, 'message': '$e'};
     }
   }
+
+  Future<Map<String, dynamic>> getDashboardFullStatistics({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Dashboard/GetFullStatistics').replace(
+        queryParameters: {
+          'startDate': startDate.toUtc().toIso8601String(),
+          'endDate': endDate.toUtc().toIso8601String(),
+        },
+      );
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        return {
+          'ok': true,
+          'data': json.decode(resp.body) as Map<String, dynamic>,
+        };
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <String, dynamic>{}};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
 }

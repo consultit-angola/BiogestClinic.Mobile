@@ -57,6 +57,7 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
     final availableApiNames = ApiConfig.availableApiNames;
 
     return Scaffold(
+      drawer: customDrawer(),
       body: Stack(
         children: [
           Container(

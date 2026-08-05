@@ -10,6 +10,7 @@ class ActivitiesPage extends GetView<ActivitiesController> {
   Widget build(BuildContext context) {
     return GetBuilder<ActivitiesController>(
       builder: (activitiesController) => Scaffold(
+        drawer: customDrawer(),
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [

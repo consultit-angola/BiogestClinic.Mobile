@@ -21,6 +21,7 @@ class ChatDetailsPage extends GetView<ChatController> {
     });
 
     return Scaffold(
+      drawer: customDrawer(),
       body: Stack(
         children: [
           // Fondo

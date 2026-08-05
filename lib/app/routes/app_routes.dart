@@ -9,4 +9,5 @@ abstract class Routes {
   static const activities = '/activities';
   static const user = '/user';
   static const apiSettings = '/api-settings';
+  static const dashboard = '/dashboard';
 }

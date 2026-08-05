@@ -107,6 +107,14 @@ class Preferences {
     _prefs?.setInt('storeID', value);
   }
 
+  String get storeName {
+    return _prefs?.getString('storeName') ?? '';
+  }
+
+  set storeName(String value) {
+    _prefs?.setString('storeName', value);
+  }
+
   String get typeUser {
     return _prefs?.getString('typeUser') ?? '';
   }

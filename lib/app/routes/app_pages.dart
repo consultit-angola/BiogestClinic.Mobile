@@ -57,5 +57,10 @@ abstract class AppPages {
       binding: UserBinding(),
     ),
     GetPage(name: Routes.apiSettings, page: () => const ApiSettingsPage()),
+    GetPage(
+      name: Routes.dashboard,
+      page: () => const DashboardPage(),
+      binding: DashboardBinding(),
+    ),
   ];
 }
