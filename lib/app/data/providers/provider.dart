@@ -528,12 +528,61 @@ class Provider {
     required DateTime endDate,
   }) async {
     try {
+      String formatDate(DateTime date) =>
+          '${date.year.toString().padLeft(4, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-'
+          '${date.day.toString().padLeft(2, '0')}';
+
       final uri = Uri.parse('$_baseApiUrl/Dashboard/GetFullStatistics').replace(
         queryParameters: {
-          'startDate': startDate.toUtc().toIso8601String(),
-          'endDate': endDate.toUtc().toIso8601String(),
+          'startDate': formatDate(startDate),
+          'endDate': formatDate(endDate),
         },
       );
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        return {
+          'ok': true,
+          'data': json.decode(resp.body) as Map<String, dynamic>,
+        };
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <String, dynamic>{}};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getDashboardClientStatistics(int year) async {
+    try {
+      final uri = Uri.parse(
+        '$_baseApiUrl/Dashboard/GetClientStatistics',
+      ).replace(queryParameters: {'year': year.toString()});
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        return {
+          'ok': true,
+          'data': json.decode(resp.body) as Map<String, dynamic>,
+        };
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <String, dynamic>{}};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getDashboardRealTimeStatistics() async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Dashboard/GetRealTimeStatistics');
       final resp = await http.get(uri, headers: getHeaderJson());
       if (resp.statusCode >= 200 && resp.statusCode <= 299) {
         return {

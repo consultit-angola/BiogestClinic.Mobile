@@ -27,6 +27,7 @@ dependencies:
   permission_handler: ^12.0.1
   searchfield: ^2.0.0
   shared_preferences: ^2.5.3
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
