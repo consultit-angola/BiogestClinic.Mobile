@@ -8,31 +8,12 @@ class ActivitiesPage extends GetView<ActivitiesController> {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<ActivitiesController>(
-      builder: (activitiesController) => Scaffold(
+    return GetBuilder<CalendarController>(
+      builder: (calendarController) => Scaffold(
+        backgroundColor: CustomColors.backgroundColor,
         drawer: customDrawer(),
-        resizeToAvoidBottomInset: false,
-        body: Stack(
-          children: [
-            Image.asset(
-              'assets/images/background.png',
-              width: Get.width,
-              height: Get.height,
-              fit: BoxFit.fill,
-            ),
-            Stack(
-              children: [
-                Column(
-                  children: [
-                    customAppbar(),
-                    Expanded(child: SizedBox.shrink()),
-                  ],
-                ),
-                customMenu(),
-              ],
-            ),
-          ],
-        ),
+        body: Column(children: [customAppbar()]),
+        bottomNavigationBar: customMenu(alignBottom: false),
       ),
     );
   }

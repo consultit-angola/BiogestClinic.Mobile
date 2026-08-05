@@ -28,7 +28,10 @@ class HomePage extends GetView<HomeController> {
                     _sectionTitle(
                       'Agenda de hoje',
                       action: 'Ver agenda',
-                      onTap: () => Get.toNamed(Routes.calendar),
+                      onTap: () {
+                        CustomMenuController.to.selectItem(1);
+                        Get.toNamed(Routes.calendar);
+                      },
                     ),
                     const SizedBox(height: 10),
                     _agendaMetrics(),
@@ -200,49 +203,40 @@ class HomePage extends GetView<HomeController> {
 
   Widget _patientRow(AppointmentDTO appointment) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-    child: Row(
-      children: [
-        SizedBox(
-          width: 48,
-          child: Text(
-            DateFormat('HH:mm').format(
-              appointment.scheduleStartDate?.toLocal() ?? DateTime.now(),
-            ),
-            style: const TextStyle(
-              color: CustomColors.primaryColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+    child: IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 48,
+            child: Text(
+              DateFormat('HH:mm').format(
+                appointment.scheduleStartDate?.toLocal() ?? DateTime.now(),
+              ),
+              style: const TextStyle(
+                color: CustomColors.primaryColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                appointment.clientName ?? 'Paciente',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: CustomColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                _serviceName(appointment),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: CustomColors.mutedTextColor,
-                ),
-              ),
-              if ((appointment.employeeName ?? '').isNotEmpty) ...[
-                const SizedBox(height: 2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  appointment.employeeName!,
+                  appointment.clientName ?? 'Paciente',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: CustomColors.textColor,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _serviceName(appointment),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -250,13 +244,25 @@ class HomePage extends GetView<HomeController> {
                     color: CustomColors.mutedTextColor,
                   ),
                 ),
+                if ((appointment.employeeName ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    appointment.employeeName!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: CustomColors.mutedTextColor,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        _stateBadge(appointment),
-      ],
+          const SizedBox(width: 8),
+          _stateBadge(appointment),
+        ],
+      ),
     ),
   );
 
@@ -272,26 +278,39 @@ class HomePage extends GetView<HomeController> {
 
   Widget _stateBadge(AppointmentDTO appointment) {
     final label = appointment.state?.name ?? 'Agendada';
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 100),
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color:
-            appointment.stateColorRGB != null && appointment.stateColorRGB != ''
-            ? Color(
-                int.parse(appointment.stateColorRGB!.replaceAll('#', '0xFF')),
-              )
-            : CustomColors.blueLightColor,
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontSize: 12,
-          color: CustomColors.textColor,
-          fontWeight: FontWeight.w700,
+    final stateColor = appointment.stateColorRGB?.isNotEmpty == true
+        ? Color(int.parse(appointment.stateColorRGB!.replaceAll('#', '0xFF')))
+        : CustomColors.textColor;
+    final needsTextShadow = stateColor.computeLuminance() > 0.6;
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 100),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        decoration: BoxDecoration(
+          color: appointment.stateColorRGB?.isNotEmpty == true
+              ? stateColor.withValues(alpha: 0.2)
+              : CustomColors.blueLightColor.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            color: stateColor,
+            fontWeight: FontWeight.w700,
+            shadows: needsTextShadow
+                ? const [
+                    Shadow(
+                      color: Color(0x99000000),
+                      offset: Offset(0, 1),
+                      blurRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
         ),
       ),
     );

@@ -12,94 +12,50 @@ class CalendarPage extends GetView<CalendarController> {
   Widget build(BuildContext context) {
     return GetBuilder<CalendarController>(
       builder: (calendarController) => Scaffold(
+        backgroundColor: CustomColors.backgroundColor,
         drawer: customDrawer(),
-        resizeToAvoidBottomInset: false,
-        body: Stack(
+        body: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    CustomColors.witheColor,
-                    CustomColors.secondaryColor.withValues(alpha: 0.3),
-                  ],
-                ),
-              ),
-            ),
-            Stack(
-              children: [
-                Column(
-                  children: [
-                    customAppbar(),
-                    Expanded(child: Obx(calendar)),
-                  ],
-                ),
-                customMenu(),
-                Positioned(
-                  top: Get.height * 0.1,
-                  right: 12,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: IconButton(
-                      tooltip: 'Filtros',
-                      icon: calendarController.loadingFilterOptions
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: CustomColors.primaryColor,
-                              ),
-                            )
-                          : Icon(
-                              Icons.filter_list,
-                              color: CustomColors.primaryColor,
-                            ),
-                      onPressed: calendarController.loadingFilterOptions
-                          ? null
-                          : () => _openFilters(context),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            customAppbar(),
+            calendarFilters(calendarController, context),
+            Expanded(child: Obx(calendar)),
           ],
         ),
+        bottomNavigationBar: customMenu(alignBottom: false),
       ),
     );
   }
 
-  Widget calendar() {
+  Widget calendarFilters(
+    CalendarController calendarController,
+    BuildContext context,
+  ) {
     return Padding(
-      padding: EdgeInsets.only(top: 8, bottom: Get.height * 0.08),
-      child: Calendar(
-        topRowIconColor: CustomColors.primaryColor,
-        bottomBarColor: CustomColors.primaryLightColor,
-        startOnMonday: true,
-        weekDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        eventsList: controller.globalController.eventList.toList(),
-        isExpandable: true,
-        eventDoneColor: CustomColors.secondaryColor,
-        selectedColor: CustomColors.tertiaryColor,
-        selectedTodayColor: Colors.red,
-        todayColor: CustomColors.primaryColor,
-        eventColor: null,
-        locale: 'pt_PT',
-        todayButtonText: 'Hoje',
-        allDayEventText: 'O dia todo',
-        multiDayEndText: 'Fim',
-        isExpanded: true,
-        expandableDateFormat: 'EEEE, dd. MMMM yyyy',
-        datePickerType: DatePickerType.date,
-        onPrintLog: (_) {},
-        dayOfWeekStyle: TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.w800,
-          fontSize: 11,
+      padding: EdgeInsets.symmetric(horizontal: Get.width * 0.04),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Material(
+          color: Colors.transparent,
+          child: IconButton(
+            tooltip: 'Filtros',
+            icon: calendarController.loadingFilterOptions
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: CustomColors.primaryDarkerColor,
+                    ),
+                  )
+                : Icon(
+                    Icons.filter_list,
+                    color: CustomColors.primaryDarkerColor,
+                  ),
+            onPressed: calendarController.loadingFilterOptions
+                ? null
+                : () => _openFilters(context),
+          ),
         ),
-        onMonthChanged: controller.onMonthChanged,
       ),
     );
   }
@@ -378,6 +334,47 @@ class CalendarPage extends GetView<CalendarController> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget calendar() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: Get.width * 0.03),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: Get.width * 0.02),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: CustomColors.borderColor),
+        ),
+        child: Calendar(
+          topRowIconColor: CustomColors.primaryDarkerColor,
+          bottomBarColor: CustomColors.primaryLightColor,
+          startOnMonday: true,
+          weekDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+          eventsList: controller.globalController.eventList.toList(),
+          isExpandable: true,
+          eventDoneColor: CustomColors.secondaryColor,
+          selectedColor: CustomColors.tertiaryColor,
+          selectedTodayColor: Colors.red,
+          todayColor: CustomColors.primaryColor,
+          eventColor: null,
+          locale: 'pt_PT',
+          todayButtonText: 'Hoje',
+          allDayEventText: 'O dia todo',
+          multiDayEndText: 'Fim',
+          isExpanded: true,
+          expandableDateFormat: 'EEEE, dd. MMMM yyyy',
+          datePickerType: DatePickerType.date,
+          onPrintLog: (_) {},
+          dayOfWeekStyle: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w800,
+            fontSize: 11,
+          ),
+          onMonthChanged: controller.onMonthChanged,
+        ),
       ),
     );
   }
