@@ -3,9 +3,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../index.dart';
-import '../../routes/index.dart';
-import '../../controllers/index.dart';
+import '../../index.dart';
+import '../../../routes/index.dart';
+import '../../../controllers/index.dart';
 
 class HomePage extends GetView<HomeController> {
   const HomePage({super.key});
@@ -24,7 +24,7 @@ class HomePage extends GetView<HomeController> {
           ),
           child: Column(
             children: [
-              customAppbar(showSettings: true),
+              customAppbar(),
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(top: Get.height * 0.1),
@@ -89,53 +89,60 @@ class HomePage extends GetView<HomeController> {
                         },
                       ),
                     ),
-                    Expanded(
-                      child: menuButton(
-                        icon: Icons.calendar_month,
-                        label: 'Calendário',
-                        iconSize: iconSize,
-                        fontSize: fontSize,
-                        pendingNotifCount:
-                            controller.globalController.pendingCalendar.value,
-                        onTap: () {
-                          CustomMenuController.to.selectItem(2);
-                          Get.toNamed(Routes.calendar);
-                        },
+                    if (controller
+                        .globalController
+                        .canAccessAppointmentCalendar)
+                      Expanded(
+                        child: menuButton(
+                          icon: Icons.calendar_month,
+                          label: 'Calendário',
+                          iconSize: iconSize,
+                          fontSize: fontSize,
+                          pendingNotifCount:
+                              controller.globalController.pendingCalendar.value,
+                          onTap: () {
+                            CustomMenuController.to.selectItem(2);
+                            Get.toNamed(Routes.calendar);
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 SizedBox(height: 0.03.sh),
                 Row(
                   children: [
-                    Expanded(
-                      child: menuButton(
-                        icon: Icons.notifications_active,
-                        label: 'Alarm',
-                        iconSize: iconSize,
-                        fontSize: fontSize,
-                        pendingNotifCount:
-                            controller.globalController.pendingAlarms.value,
-                        onTap: () {
-                          CustomMenuController.to.selectItem(3);
-                          Get.toNamed(Routes.alarm);
-                        },
+                    if (controller.globalController.canAccessAlarms)
+                      Expanded(
+                        child: menuButton(
+                          icon: Icons.notifications_active,
+                          label: 'Alarm',
+                          iconSize: iconSize,
+                          fontSize: fontSize,
+                          pendingNotifCount:
+                              controller.globalController.pendingAlarms.value,
+                          onTap: () {
+                            CustomMenuController.to.selectItem(3);
+                            Get.toNamed(Routes.alarm);
+                          },
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: menuButton(
-                        icon: Icons.groups,
-                        label: 'Actividades',
-                        iconSize: iconSize,
-                        fontSize: fontSize,
-                        pendingNotifCount:
-                            controller.globalController.pendingActivities.value,
-                        onTap: () {
-                          CustomMenuController.to.selectItem(4);
-                          Get.toNamed(Routes.activities);
-                        },
+                    if (controller.globalController.canAccessActivities)
+                      Expanded(
+                        child: menuButton(
+                          icon: Icons.groups,
+                          label: 'Actividades',
+                          iconSize: iconSize,
+                          fontSize: fontSize,
+                          pendingNotifCount: controller
+                              .globalController
+                              .pendingActivities
+                              .value,
+                          onTap: () {
+                            CustomMenuController.to.selectItem(4);
+                            Get.toNamed(Routes.activities);
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

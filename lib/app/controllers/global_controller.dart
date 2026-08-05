@@ -14,11 +14,18 @@ import 'index.dart';
 class GlobalController extends GetxController {
   static GlobalController get to => Get.find<GlobalController>();
 
+  static const int appointmentScheduleManagementPermission = 500;
+  static const int viewOtherUsersSchedulePermission = 504;
+  static const int globalConfigurationPermission = 25;
+  static const int activityManagementPermission = 750;
+
   final Provider _provider = Provider();
   final Preferences _pref = Preferences();
   RxBool isAuthenticated = false.obs;
   final Rxn<UserDTO> authenticatedUser = Rxn<UserDTO>();
   final Rxn<EmployeeDTO> authenticatedEmployee = Rxn<EmployeeDTO>();
+  final RxList<int> activePermissions = <int>[].obs;
+  final Map<String, List<EnumEntryDTO>> enumEntries = {};
   final RxList<UserDTO> users = <UserDTO>[].obs;
   RxMap<int, RxList<MessageDTO>> oldMessages = <int, RxList<MessageDTO>>{}.obs;
   RxMap<int, RxList<MessageDTO>> newMessages = <int, RxList<MessageDTO>>{}.obs;
@@ -29,6 +36,7 @@ class GlobalController extends GetxController {
 
   final RxList<NeatCleanCalendarEvent> eventList =
       <NeatCleanCalendarEvent>[].obs;
+  final Map<String, dynamic> calendarFilters = {};
   var pendingMessages = 0.obs;
   var pendingCalendar = 0.obs;
   var pendingAlarms = 0.obs;
@@ -39,38 +47,160 @@ class GlobalController extends GetxController {
   Timer? timerChats;
   Timer? timerAlarms;
   Timer? timerAppts;
+  bool _handlingExpiredSession = false;
+  bool _timersStoppedByConnection = false;
 
-  void initControllers() {
-    Get.put(HomeController());
-    Get.put(ChatController());
-    Get.put(AlarmController());
-    Get.put(CalendarController());
-    Get.put(ActivitiesController());
-
-    getProgrammedAlarms();
-    startChatTimer();
-    startAlarmTimer();
-    startApptsTimer();
+  bool hasPermission(int permission) {
+    return activePermissions.contains(permission);
   }
 
-  void startChatTimer() async {
+  bool get canAccessAppointmentCalendar =>
+      hasPermission(appointmentScheduleManagementPermission);
+
+  bool get canViewOtherUsersAppointments =>
+      hasPermission(viewOtherUsersSchedulePermission);
+
+  bool get canAccessAlarms => hasPermission(globalConfigurationPermission);
+
+  bool get canAccessActivities => hasPermission(activityManagementPermission);
+
+  List<int> getEnumEntryIdsByName(String enumKey, List<String> names) {
+    return enumEntries[enumKey]
+            ?.where((entry) => names.contains(entry.name))
+            .map((entry) => entry.id)
+            .toList() ??
+        [];
+  }
+
+  Future<void> loadEnumEntries() async {
+    final resp = await _provider.getEnumEntries();
+    if (_handleConnectionError(resp)) {
+      throw Exception(resp['message']);
+    }
+    if (await _handleExpiredResponse(resp)) {
+      throw Exception(resp['message']);
+    }
+    if (resp['ok'] != true) {
+      throw Exception(resp['message']);
+    }
+
+    enumEntries
+      ..clear()
+      ..addAll(resp['data'] as Map<String, List<EnumEntryDTO>>);
+  }
+
+  Future<bool> handleResponseError(Map<String, dynamic> response) async {
+    if (_handleConnectionError(response)) {
+      return true;
+    }
+    return _handleExpiredResponse(response);
+  }
+
+  void markSessionActive() {
+    _handlingExpiredSession = false;
+    _timersStoppedByConnection = false;
+  }
+
+  bool _handleConnectionError(Map<String, dynamic> response) {
+    if (response['connectionError'] != true) {
+      return false;
+    }
+
+    if (!_timersStoppedByConnection) {
+      _timersStoppedByConnection = true;
+      stopTimer();
+      Get.snackbar(
+        'Erro de conexão',
+        'As atualizações automáticas foram interrompidas.',
+      );
+    }
+    return true;
+  }
+
+  Future<bool> _handleExpiredResponse(Map<String, dynamic> response) async {
+    if (response['sessionExpired'] != true) {
+      return false;
+    }
+
+    if (!_handlingExpiredSession) {
+      _handlingExpiredSession = true;
+      stopTimer();
+      await _pref.clear();
+      Get.offAllNamed(Routes.login);
+      await Future<void>.delayed(Get.defaultTransitionDuration);
+      await clearSession();
+      Get.snackbar(
+        'Sessão terminada',
+        'A sua sessão foi encerrada noutro dispositivo.',
+      );
+    }
+    return true;
+  }
+
+  Future<void> initControllers() async {
+    await loadEnumEntries();
+    Get.put(HomeController());
+    Get.put(ChatController());
+    if (canAccessAlarms) {
+      Get.put(AlarmController());
+      startAlarmTimer();
+    }
+    if (canAccessAppointmentCalendar) {
+      if (Get.isRegistered<CalendarController>()) {
+        await Get.delete<CalendarController>(force: true);
+      }
+      Get.put(CalendarController(), permanent: true);
+      await CalendarController.to.loadFilterOptions(
+        showErrors: false,
+        onLoading: (message) => EasyLoading.show(status: message),
+      );
+    }
+    if (canAccessActivities) {
+      Get.put(ActivitiesController());
+    }
+
+    EasyLoading.show(status: 'Carregando agenda, mensagens e alarmes...');
+    await Future.wait([
+      startChatTimer(),
+      if (canAccessAlarms) getProgrammedAlarms(),
+      if (canAccessAppointmentCalendar) startApptsTimer(),
+    ]);
+  }
+
+  Future<void> startChatTimer() async {
     await Future.wait([getMessages(onlyUnread: false), getMessages()]);
+    if (authenticatedUser.value == null || _timersStoppedByConnection) {
+      return;
+    }
     timerChats = Timer.periodic(const Duration(seconds: 5), (time) {
       getMessages();
     });
   }
 
   void startAlarmTimer() async {
+    if (!canAccessAlarms) {
+      programmedAlarms.clear();
+      programmedAlarmsMap.clear();
+      alarmInstances.clear();
+      pendingAlarms.value = 0;
+      return;
+    }
     timerAlarms = Timer.periodic(Duration(minutes: 5), (time) {
       getActiveInstances();
-      getAppts();
     });
   }
 
-  void startApptsTimer() {
-    getAppts();
+  Future<void> startApptsTimer() async {
+    if (!canAccessAppointmentCalendar) {
+      eventList.clear();
+      pendingCalendar.value = 0;
+      return;
+    }
+    await getAppts();
     timerAppts = Timer.periodic(Duration(minutes: 10), (time) {
-      getAppts();
+      if (Get.isRegistered<CalendarController>()) {
+        CalendarController.to.refreshAppointments();
+      }
     });
   }
 
@@ -80,17 +210,60 @@ class GlobalController extends GetxController {
     timerAppts?.cancel();
   }
 
+  Future<void> clearSession({bool clearPreferences = false}) async {
+    stopTimer();
+    authenticatedUser.value = null;
+    authenticatedEmployee.value = null;
+    activePermissions.clear();
+    enumEntries.clear();
+    calendarFilters.clear();
+    users.clear();
+    oldMessages.clear();
+    newMessages.clear();
+    messages.clear();
+    programmedAlarms.clear();
+    programmedAlarmsMap.clear();
+    alarmInstances.clear();
+    eventList.clear();
+    pendingMessages.value = 0;
+    pendingCalendar.value = 0;
+    pendingAlarms.value = 0;
+    pendingActivities.value = 0;
+    isCalendarControllerLoaded = false;
+    isChatControllerLoaded = false;
+    isAuthenticated.value = false;
+
+    if (Get.isRegistered<HomeController>()) {
+      await Get.delete<HomeController>(force: true);
+    }
+    if (Get.isRegistered<ChatController>()) {
+      await Get.delete<ChatController>(force: true);
+    }
+    if (Get.isRegistered<AlarmController>()) {
+      await Get.delete<AlarmController>(force: true);
+    }
+    if (Get.isRegistered<CalendarController>()) {
+      await Get.delete<CalendarController>(force: true);
+    }
+    if (Get.isRegistered<ActivitiesController>()) {
+      await Get.delete<ActivitiesController>(force: true);
+    }
+    if (clearPreferences) {
+      await _pref.clear();
+    }
+  }
+
   void logout() async {
     try {
       EasyLoading.show();
       Map<String, dynamic> resp = await _provider.logout();
       if (resp['ok']) {
-        authenticatedUser.value = null;
-        isAuthenticated.value = false;
         EasyLoading.dismiss();
-        Preferences().clear();
         stopTimer();
+        await _pref.clear();
         Get.offAllNamed(Routes.login);
+        await Future<void>.delayed(Get.defaultTransitionDuration);
+        await clearSession();
       } else {
         Get.snackbar('Error', resp['message']);
       }
@@ -115,6 +288,13 @@ class GlobalController extends GetxController {
     };
 
     Map<String, dynamic> resp = await _provider.getMessages(data);
+
+    if (_handleConnectionError(resp)) {
+      return;
+    }
+    if (await _handleExpiredResponse(resp)) {
+      return;
+    }
 
     if (resp['ok']) {
       var auxMessages = resp['data'] as List<MessageDTO>;
@@ -185,6 +365,11 @@ class GlobalController extends GetxController {
   }
 
   Future<void> getActiveInstances() async {
+    if (!canAccessAlarms) {
+      alarmInstances.clear();
+      pendingAlarms.value = 0;
+      return;
+    }
     final data = {
       'withAlarmInstancesToNotify': true,
       'withAllAlarmInstances': false,
@@ -192,6 +377,12 @@ class GlobalController extends GetxController {
       'alarmIDToUpdateLastNotificationDate': -1,
     };
     Map<String, dynamic> resp = await _provider.getActiveInstances(data);
+    if (_handleConnectionError(resp)) {
+      return;
+    }
+    if (await _handleExpiredResponse(resp)) {
+      return;
+    }
     if (resp['ok']) {
       // 🔹 Limpia todas las listas de instancias antes de volver a llenarlas
       programmedAlarmsMap.forEach((key, value) {
@@ -204,7 +395,10 @@ class GlobalController extends GetxController {
 
       // 🔹 Vuelve a llenar las instancias agrupadas
       for (var instance in alarmInstances) {
-        programmedAlarmsMap[instance.alarmId]!['instances'].add(instance);
+        final alarm = programmedAlarmsMap[instance.alarmId];
+        if (alarm != null) {
+          (alarm['instances'] as List).add(instance);
+        }
       }
 
       // 🔹 Recalcula los conteos
@@ -218,28 +412,43 @@ class GlobalController extends GetxController {
     }
   }
 
-  getProgrammedAlarms() async {
+  Future<void> getProgrammedAlarms() async {
+    if (!canAccessAlarms) {
+      programmedAlarms.clear();
+      programmedAlarmsMap.clear();
+      alarmInstances.clear();
+      pendingAlarms.value = 0;
+      return;
+    }
     try {
-      EasyLoading.show();
       Map<String, dynamic> resp = await _provider.getProgrammedAlarms();
+      if (_handleConnectionError(resp)) {
+        return;
+      }
+      if (await _handleExpiredResponse(resp)) {
+        return;
+      }
       if (resp['ok']) {
         programmedAlarms.value = resp['data'] as List<AlarmDTO>;
         programmedAlarmsMap.value = {
           for (var p in programmedAlarms)
             if (p.id != null) p.id!: {'alarm': p, 'instances': []},
         };
-        getActiveInstances();
+        await getActiveInstances();
       } else {
         Get.snackbar('Error', resp['message']);
       }
     } catch (error) {
       Get.snackbar('Error', '$error');
-    } finally {
-      EasyLoading.dismiss();
     }
   }
 
   Future<void> getAppts({DateTime? pStartDate, DateTime? pEndDate}) async {
+    if (!canAccessAppointmentCalendar) {
+      eventList.clear();
+      pendingCalendar.value = 0;
+      return;
+    }
     final now = DateTime.now();
     final startDate =
         pStartDate?.toIso8601String() ??
@@ -249,16 +458,26 @@ class GlobalController extends GetxController {
         DateTime.utc(now.year, now.month + 1, 0, 23, 59, 59).toIso8601String();
 
     final data = {
-      // TypeEnumList: 0 - NotDefined, 1 - Appointment, 2 - Internment, 3 - Surgery, 4 - Emergency, 5 - Urgency
-      'TypeEnumList': [1, 4, 5],
+      'TypeEnumList': getEnumEntryIdsByName('AppointmentTypeEnum', [
+        'Appointment',
+        'Emergency',
+        'Urgency',
+      ]),
       'EmployeeIDList': [authenticatedEmployee.value!.id],
       'RoomID': null,
       'StoreID': _pref.storeID,
       'ScheduleStartDate': startDate,
       'ScheduleEndDate': endDate,
-      'OnlyNotCanceled': null,
+      'OnlyNotCanceled': true,
+      ...calendarFilters,
     };
     Map<String, dynamic> resp = await _provider.getAppts(data);
+    if (_handleConnectionError(resp)) {
+      return;
+    }
+    if (await _handleExpiredResponse(resp)) {
+      return;
+    }
     if (resp['ok']) {
       eventList.clear();
       final appts = resp['data'] as List<AppointmentDTO>;

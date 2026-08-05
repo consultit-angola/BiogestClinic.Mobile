@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
+import '../controllers/global_controller.dart';
 import 'app_routes.dart';
+import 'calendar_permission_middleware.dart';
+import 'permission_middleware.dart';
 import '../bindings/index.dart';
 import '../ui/index.dart';
 
@@ -30,16 +33,23 @@ abstract class AppPages {
       name: Routes.alarm,
       page: () => const AlarmPage(),
       binding: AlarmBinding(),
+      middlewares: [
+        PermissionMiddleware(GlobalController.globalConfigurationPermission),
+      ],
     ),
     GetPage(
       name: Routes.calendar,
       page: () => const CalendarPage(),
       binding: CalendarBinding(),
+      middlewares: [CalendarPermissionMiddleware()],
     ),
     GetPage(
       name: Routes.activities,
       page: () => const ActivitiesPage(),
       binding: ActivitiesBinding(),
+      middlewares: [
+        PermissionMiddleware(GlobalController.activityManagementPermission),
+      ],
     ),
     GetPage(
       name: Routes.user,

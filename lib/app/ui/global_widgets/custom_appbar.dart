@@ -7,10 +7,8 @@ import '../../controllers/index.dart';
 import '../../routes/index.dart';
 import '../index.dart';
 
-Widget customAppbar({bool showSettings = false}) {
+Widget customAppbar({bool showUserMenu = true}) {
   final menuController = CustomMenuController();
-  final user = GlobalController.to.authenticatedUser.value;
-  final canManageApi = user != null && user.id == 1;
   return SizedBox(
     width: Get.width,
     // Altura total para permitir el logo centrado
@@ -44,89 +42,102 @@ Widget customAppbar({bool showSettings = false}) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              if (showSettings)
-                GestureDetector(
-                  onTapDown: (TapDownDetails details) {
-                    showMenu(
-                      context: Get.context!,
-                      position: RelativeRect.fromLTRB(
-                        details.globalPosition.dx,
-                        details.globalPosition.dy,
-                        0,
-                        0,
-                      ),
-                      items: [
-                        PopupMenuItem(
-                          value: 'user',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person),
-                              SizedBox(width: Get.width * 0.02),
-                              const Text('Utilizador info'),
-                            ],
-                          ),
+              if (showUserMenu)
+                Obx(() {
+                  final user = GlobalController.to.authenticatedUser.value;
+
+                  if (user == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      showMenu(
+                        context: Get.context!,
+                        position: RelativeRect.fromLTRB(
+                          Get.width,
+                          Get.height * 0.06,
+                          0,
+                          0,
                         ),
-                        PopupMenuItem(
-                          value: 'cleanCache',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.delete_sweep_outlined),
-                              SizedBox(width: Get.width * 0.02),
-                              const Text('Limpar cache'),
-                            ],
-                          ),
-                        ),
-                        if (canManageApi)
+                        items: [
                           PopupMenuItem(
-                            value: 'changeApi',
+                            value: 'user',
                             child: Row(
                               children: [
-                                const Icon(Icons.cloud_sync_outlined),
+                                const Icon(Icons.person),
                                 SizedBox(width: Get.width * 0.02),
-                                const Text('Alterar API'),
+                                const Text('Utilizador info'),
                               ],
                             ),
                           ),
-                        PopupMenuItem(
-                          value: 'logout',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.logout_rounded),
-                              SizedBox(width: Get.width * 0.02),
-                              const Text('Sair'),
-                            ],
+                          PopupMenuItem(
+                            value: 'cleanCache',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.delete_sweep_outlined),
+                                SizedBox(width: Get.width * 0.02),
+                                const Text('Limpar cache'),
+                              ],
+                            ),
                           ),
+                          if (user.id == 1)
+                            PopupMenuItem(
+                              value: 'changeApi',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.cloud_sync_outlined),
+                                  SizedBox(width: Get.width * 0.02),
+                                  const Text('Alterar API'),
+                                ],
+                              ),
+                            ),
+                          PopupMenuItem(
+                            value: 'logout',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.logout_rounded),
+                                SizedBox(width: Get.width * 0.02),
+                                const Text('Sair'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ).then((value) {
+                        switch (value) {
+                          case 'user':
+                            menuController.selectedPosItem.value = -1;
+                            Get.toNamed(Routes.user);
+                            break;
+                          case 'logout':
+                            GlobalController.to.logout();
+                            break;
+                          case 'cleanCache':
+                            Preferences().clear();
+                            Preferences().skipSplash = false;
+                            Get.snackbar('Sucesso', 'Cache limpo com sucesso');
+                            Get.offAllNamed(Routes.splash);
+                            break;
+                          case 'changeApi':
+                            Get.toNamed(Routes.apiSettings);
+                            break;
+                        }
+                      });
+                    },
+                    child: CircleAvatar(
+                      radius: Get.width * 0.04,
+                      backgroundColor: const Color(0xB6181818),
+                      child: Text(
+                        _getUserInitials(user.name),
+                        style: TextStyle(
+                          color: CustomColors.witheColor,
+                          fontSize: Get.width * 0.035,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ).then((value) {
-                      switch (value) {
-                        case 'user':
-                          menuController.selectedPosItem.value = -1;
-                          Get.toNamed(Routes.user);
-                          break;
-                        case 'logout':
-                          GlobalController.to.logout();
-                          break;
-                        case 'cleanCache':
-                          Preferences().clear();
-                          Preferences().skipSplash = false;
-                          Get.snackbar('Sucesso', 'Cache limpo com sucesso');
-                          Get.offAllNamed(Routes.splash);
-                          break;
-                        case 'changeApi':
-                          Get.toNamed(Routes.apiSettings);
-                          break;
-                      }
-                    });
-                  },
-                  child: Icon(
-                    Icons.settings,
-                    color: CustomColors.witheColor,
-                    size: Get.width * 0.08,
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
+                      ),
+                    ),
+                  );
+                }),
             ],
           ),
         ),
@@ -160,4 +171,13 @@ Widget customAppbar({bool showSettings = false}) {
       ],
     ),
   );
+}
+
+String _getUserInitials(String name) {
+  final names = name.trim().split(RegExp(r'\s+'));
+  if (names.isEmpty || names.first.isEmpty) return '';
+
+  final firstInitial = names.first[0].toUpperCase();
+  final lastInitial = names.length > 1 ? names.last[0].toUpperCase() : '';
+  return '$firstInitial$lastInitial';
 }

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
@@ -17,7 +16,6 @@ class LoginController extends GetxController {
   final formKey = GlobalKey<FormBuilderState>();
   RxBool mostrarPass = false.obs;
   final Provider _provider = Provider();
-  final Logger logger = Logger();
 
   final Preferences _pref = Preferences();
   final globalController = GlobalController.to;
@@ -40,7 +38,7 @@ class LoginController extends GetxController {
     }
   }
 
-  void login({String? username, String? password}) async {
+  Future<void> login({String? username, String? password}) async {
     if ((username == null || username == '') &&
         (password == null || password == '') &&
         formKey.currentState!.saveAndValidate()) {
@@ -54,35 +52,71 @@ class LoginController extends GetxController {
         selectedStoreID != -1 &&
         selectedStoreID != null) {
       try {
-        EasyLoading.show();
-        Map<String, dynamic> resp = await _provider.login(
+        EasyLoading.show(status: 'A iniciar sessão...');
+        var resp = await _provider.login(
           username: username ?? '',
           password: password ?? '',
           storeID: selectedStoreID!,
         );
+
+        if (resp['requiresForceLogout'] == true) {
+          EasyLoading.dismiss();
+          final shouldForceLogout = await Get.dialog<bool>(
+            AlertDialog(
+              title: const Text('Sessões ativas'),
+              content: Text(resp['message']?.toString() ?? ''),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(result: false),
+                  child: const Text('Não'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Get.back(result: true),
+                  child: const Text('Sim, encerrar'),
+                ),
+              ],
+            ),
+            barrierDismissible: false,
+          );
+
+          if (shouldForceLogout != true) {
+            return;
+          }
+
+          EasyLoading.show(status: 'A iniciar sessão...');
+          resp = await _provider.login(
+            username: username ?? '',
+            password: password ?? '',
+            storeID: selectedStoreID!,
+            forceLogout: true,
+          );
+        }
+
         if (resp['ok']) {
-          globalController.authenticatedUser.value =
-              (resp['data'] as AuthResponseDTO).userInfo;
+          final authResponse = resp['data'] as AuthResponseDTO;
+          globalController.authenticatedUser.value = authResponse.userInfo;
 
-          globalController.authenticatedEmployee.value =
-              (resp['data'] as AuthResponseDTO).employee;
+          globalController.authenticatedEmployee.value = authResponse.employee;
+          globalController.activePermissions.assignAll(
+            authResponse.activePermissions,
+          );
+          globalController.markSessionActive();
 
-          logger.i('El usuario esta logeado');
+          await globalController.initControllers();
+
           globalController.isAuthenticated.value = true;
-
-          globalController.initControllers();
 
           EasyLoading.dismiss();
           Get.offAllNamed(Routes.home);
         } else {
           Get.snackbar('Error', resp['message']);
         }
-        EasyLoading.dismiss();
-        tryLogin.value = false;
       } catch (error) {
-        EasyLoading.dismiss();
+        await globalController.clearSession();
         Get.snackbar('Error', '$error');
         log('Error: $error');
+      } finally {
+        EasyLoading.dismiss();
         tryLogin.value = false;
       }
     }

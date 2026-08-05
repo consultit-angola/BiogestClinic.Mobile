@@ -3,13 +3,34 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'preferences.dart';
 
 class ApiConfig {
-  static const String defaultApiName = 'ClinicaMaster';
+  static const String defaultApiName = 'Demo';
   static const List<String> predefinedApiNames = [
-    'Demo',
-    'Test',
-    'HPLS',
-    'ClinicaMaster',
     'Afrodente',
+    'Ausmed',
+    'Belodente',
+    'BomSenso',
+    'ClinicaMaster',
+    'Demo',
+    'DentalCenter',
+    'FisioHealth',
+    'FisioLuanda',
+    'Freefarma',
+    'Gav',
+    'GolDente',
+    'Healthtek',
+    'HPLS',
+    'Immunize',
+    'Junic',
+    'Magnus',
+    'Makarismo',
+    'OralClinic',
+    'Publish',
+    'Raizes',
+    'SmileDente',
+    'Test',
+    'TestFE',
+    'Vitrea',
+    'Zule',
   ];
   static const String fallbackBaseUrl =
       'https://biogestclinic.consultit-angola.com/Biogest.WebAPI';
@@ -31,6 +52,14 @@ class ApiConfig {
   static String get activeApiUrl {
     final storedUrl = _normalizeUrl(_preferences.apiUrl);
     if (storedUrl.isNotEmpty) {
+      final pattern = RegExp(
+        r'^(https?://.+?/Biogest\.WebAPI\.)([^/]+)(/api/?$)',
+      );
+      final match = pattern.firstMatch(storedUrl);
+      if (match != null) {
+        final storedApiName = _normalizeName(match.group(2) ?? '');
+        return '${match.group(1)}$storedApiName${match.group(3)}';
+      }
       return storedUrl;
     }
     return defaultApiUrl;
@@ -101,7 +130,13 @@ class ApiConfig {
     if (normalized.isEmpty) {
       return '';
     }
-    final lower = normalized.toLowerCase();
-    return '${lower[0].toUpperCase()}${lower.substring(1)}';
+
+    for (final apiName in predefinedApiNames) {
+      if (apiName.toLowerCase() == normalized.toLowerCase()) {
+        return apiName;
+      }
+    }
+
+    return normalized;
   }
 }

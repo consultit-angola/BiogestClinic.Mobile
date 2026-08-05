@@ -35,10 +35,11 @@ class ChatPage extends GetView<ChatController> {
                 Column(
                   children: [
                     customAppbar(),
-                    search(),
+                    search(chatController),
                     Obx(() {
-                      final messagesMap = controller.globalController.messages;
-                      return lastMessages(messagesMap);
+                      final messagesMap =
+                          chatController.globalController.messages;
+                      return lastMessages(chatController, messagesMap);
                     }),
                   ],
                 ),
@@ -51,11 +52,14 @@ class ChatPage extends GetView<ChatController> {
     );
   }
 
-  Widget lastMessages(RxMap<int, RxList<MessageDTO>> messagesMap) {
+  Widget lastMessages(
+    ChatController chatController,
+    RxMap<int, RxList<MessageDTO>> messagesMap,
+  ) {
     var lastMessages = <Widget>[];
 
     for (final entry in messagesMap.entries) {
-      final user = controller.globalController.users.firstWhereOrNull(
+      final user = chatController.globalController.users.firstWhereOrNull(
         (u) => u.id == entry.key,
       );
       final chatMessages = entry.value;
@@ -66,7 +70,7 @@ class ChatPage extends GetView<ChatController> {
             (m) =>
                 m.status == MessageStatus.sent &&
                 m.destinationUserID ==
-                    controller.globalController.authenticatedUser.value?.id,
+                    chatController.globalController.authenticatedUser.value?.id,
           )
           .length;
 
@@ -74,8 +78,9 @@ class ChatPage extends GetView<ChatController> {
         final lastMessage = chatMessages.last;
         lastMessages.add(
           contact(
+            chatController: chatController,
             user: user,
-            lastMessage: lastMessage.messageText,
+            lastMessage: _getLastMessageText(lastMessage),
             time: DateFormat('HH:mm').format(lastMessage.creationDate),
             pendingMessages: pendingMessages,
           ),
@@ -88,7 +93,17 @@ class ChatPage extends GetView<ChatController> {
     );
   }
 
+  String _getLastMessageText(MessageDTO message) {
+    if (message.messageText == 'attachDocument' &&
+        message.attachments.isNotEmpty) {
+      return message.attachments.last.name;
+    }
+
+    return message.messageText;
+  }
+
   Widget contact({
+    required ChatController chatController,
     required UserDTO user,
     String? lastMessage,
     String? time,
@@ -110,7 +125,7 @@ class ChatPage extends GetView<ChatController> {
         ),
       ),
       title: Text(
-        '${user.name} ${user.id == controller.globalController.authenticatedUser.value?.id ? '(Eu)' : ''}',
+        '${user.name} ${user.id == chatController.globalController.authenticatedUser.value?.id ? '(Eu)' : ''}',
       ),
       subtitle: lastMessage != null
           ? Padding(
@@ -124,9 +139,9 @@ class ChatPage extends GetView<ChatController> {
             )
           : null,
       onTap: () {
-        controller.destinationUser.value = user;
-        controller.searchFocusNode.unfocus();
-        controller.searchController.clear();
+        chatController.destinationUser.value = user;
+        chatController.searchFocusNode.unfocus();
+        chatController.searchController.clear();
         Get.toNamed(Routes.chatDetails);
       },
       trailing: showTime
@@ -162,7 +177,7 @@ class ChatPage extends GetView<ChatController> {
     );
   }
 
-  Widget search() {
+  Widget search(ChatController chatController) {
     return Padding(
       padding: EdgeInsets.all(Get.width * 0.05),
       child: Container(
@@ -178,8 +193,8 @@ class ChatPage extends GetView<ChatController> {
           ],
         ),
         child: SearchField<UserDTO>(
-          controller: controller.searchController,
-          focusNode: controller.searchFocusNode,
+          controller: chatController.searchController,
+          focusNode: chatController.searchFocusNode,
           maxSuggestionsInViewPort: 5,
           itemHeight: 60,
           suggestionsDecoration: SuggestionDecoration(
@@ -198,11 +213,15 @@ class ChatPage extends GetView<ChatController> {
               child: Icon(Icons.group_add_sharp, size: Get.width * 0.08),
             ),
           ),
-          suggestions: controller.globalController.users
+          suggestions: chatController.globalController.users
               .map(
                 (user) => SearchFieldListItem<UserDTO>(
                   user.name,
-                  child: contact(user: user, showTime: false),
+                  child: contact(
+                    chatController: chatController,
+                    user: user,
+                    showTime: false,
+                  ),
                 ),
               )
               .toList(),

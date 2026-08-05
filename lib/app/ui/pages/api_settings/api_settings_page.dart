@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../controllers/index.dart';
-import '../../data/shared/index.dart';
-import '../../routes/index.dart';
-import '../index.dart';
+import '../../../controllers/index.dart';
+import '../../../data/shared/index.dart';
+import '../../../routes/index.dart';
+import '../../index.dart';
 
 class ApiSettingsPage extends StatefulWidget {
   const ApiSettingsPage({super.key});
@@ -35,6 +35,7 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
     globalController.stopTimer();
     globalController.authenticatedUser.value = null;
     globalController.authenticatedEmployee.value = null;
+    globalController.activePermissions.clear();
     globalController.isAuthenticated.value = false;
 
     await Preferences().clear();

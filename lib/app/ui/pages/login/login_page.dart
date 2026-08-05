@@ -4,9 +4,9 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
-import '../../controllers/index.dart';
-import '../../data/models/index.dart';
-import '../index.dart';
+import '../../../controllers/index.dart';
+import '../../../data/models/index.dart';
+import '../../index.dart';
 
 class LoginPage extends GetView<LoginController> {
   const LoginPage({super.key});
@@ -32,7 +32,7 @@ class LoginPage extends GetView<LoginController> {
               ),
               Column(
                 children: [
-                  customAppbar(),
+                  customAppbar(showUserMenu: false),
                   Obx(() {
                     return loginController.tryLogin.value
                         ? SizedBox.shrink()

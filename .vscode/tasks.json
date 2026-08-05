@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Filtrar logs Android",
+      "type": "shell",
+      "command": "$adb = '${env:ANDROID_HOME}\\sdk\\platform-tools\\adb.exe'; $tags = @('EGL_emulation', 'FlutterJNI', 'ImeTracker', 'InputMethodManager', 'InsetsController', 'RemoteInputConnectionImpl', 'SharedPreferencesImpl', 'TextInputPlugin', 'WindowOnBackDispatcher'); foreach ($tag in $tags) { & $adb shell setprop \"log.tag.$tag\" S }",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "close": true
+      }
+    }
+  ]
+}

@@ -9,6 +9,7 @@ class AuthResponseDTO {
   final String refreshTokenExpiration;
   final UserDTO userInfo;
   final EmployeeDTO employee;
+  final List<int> activePermissions;
 
   AuthResponseDTO({
     required this.accessToken,
@@ -19,6 +20,7 @@ class AuthResponseDTO {
     required this.refreshTokenExpiration,
     required this.userInfo,
     required this.employee,
+    required this.activePermissions,
   });
 
   factory AuthResponseDTO.fromJson(Map<String, dynamic> json) =>
@@ -31,6 +33,11 @@ class AuthResponseDTO {
         refreshTokenExpiration: json['RefreshTokenExpiration'] ?? '',
         userInfo: UserDTO.fromJson(json['UserInfo'] ?? {}),
         employee: EmployeeDTO.fromJson(json['Employee'] ?? {}),
+        activePermissions:
+            (json['ActivePermissions'] as List?)
+                ?.map((permission) => permission as int)
+                .toList() ??
+            [],
       );
 
   Map<String, dynamic> toJson() => {
@@ -42,5 +49,6 @@ class AuthResponseDTO {
     'RefreshTokenExpiration': refreshTokenExpiration,
     'UserInfo': userInfo.toJson(),
     'Employee': employee.toJson(),
+    'ActivePermissions': activePermissions,
   };
 }

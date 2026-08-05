@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import '../../controllers/index.dart';
-import '../index.dart';
+import '../../../controllers/index.dart';
+import '../../index.dart';
 
 class ActivitiesPage extends GetView<ActivitiesController> {
   const ActivitiesPage({super.key});

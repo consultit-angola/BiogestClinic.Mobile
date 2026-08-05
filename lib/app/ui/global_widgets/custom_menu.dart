@@ -54,42 +54,45 @@ Widget customMenu() {
                 },
               ),
             ),
-            Expanded(
-              child: menuButton(
-                icon: Icons.calendar_month,
-                pendingNotifCount:
-                    menuController.globalController.pendingCalendar.value,
-                isSelected: menuController.selectedPosItem.value == 2,
-                onTap: () {
-                  menuController.selectItem(2);
-                  Get.toNamed(Routes.calendar);
-                },
+            if (menuController.globalController.canAccessAppointmentCalendar)
+              Expanded(
+                child: menuButton(
+                  icon: Icons.calendar_month,
+                  pendingNotifCount:
+                      menuController.globalController.pendingCalendar.value,
+                  isSelected: menuController.selectedPosItem.value == 2,
+                  onTap: () {
+                    menuController.selectItem(2);
+                    Get.toNamed(Routes.calendar);
+                  },
+                ),
               ),
-            ),
-            Expanded(
-              child: menuButton(
-                icon: Icons.notifications_active,
-                pendingNotifCount:
-                    menuController.globalController.pendingAlarms.value,
-                isSelected: menuController.selectedPosItem.value == 3,
-                onTap: () {
-                  menuController.selectItem(3);
-                  Get.toNamed(Routes.alarm);
-                },
+            if (menuController.globalController.canAccessAlarms)
+              Expanded(
+                child: menuButton(
+                  icon: Icons.notifications_active,
+                  pendingNotifCount:
+                      menuController.globalController.pendingAlarms.value,
+                  isSelected: menuController.selectedPosItem.value == 3,
+                  onTap: () {
+                    menuController.selectItem(3);
+                    Get.toNamed(Routes.alarm);
+                  },
+                ),
               ),
-            ),
-            Expanded(
-              child: menuButton(
-                icon: Icons.groups,
-                pendingNotifCount:
-                    menuController.globalController.pendingActivities.value,
-                isSelected: menuController.selectedPosItem.value == 4,
-                onTap: () {
-                  menuController.selectItem(4);
-                  Get.toNamed(Routes.activities);
-                },
+            if (menuController.globalController.canAccessActivities)
+              Expanded(
+                child: menuButton(
+                  icon: Icons.groups,
+                  pendingNotifCount:
+                      menuController.globalController.pendingActivities.value,
+                  isSelected: menuController.selectedPosItem.value == 4,
+                  onTap: () {
+                    menuController.selectItem(4);
+                    Get.toNamed(Routes.activities);
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),

@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
@@ -18,7 +24,7 @@ class ChatController extends GetxController {
   final scrollController = ScrollController();
 
   final destinationUser = Rxn<UserDTO>();
-  final attachments = Rxn<List<AttachmentDTO>>();
+  final attachments = <AttachmentDTO>[].obs;
 
   @override
   void onInit() {
@@ -58,18 +64,19 @@ class ChatController extends GetxController {
   // ────────────────────────────────
   Future<bool?> sendMessage() async {
     final text = inputController.text.trim();
-    if (text.isEmpty) return null;
+    final selectedAttachments = List<AttachmentDTO>.from(attachments);
+    if (text.isEmpty && selectedAttachments.isEmpty) return null;
 
     final tempId = -DateTime.now().millisecondsSinceEpoch;
     final now = DateTime.now();
 
     final message = MessageDTO(
       id: tempId,
-      messageText: text,
+      messageText: text.isEmpty ? 'attachDocument' : text,
       creationDate: now,
       creationUserID: 0,
       destinationUserID: destinationUser.value!.id,
-      attachments: attachments.value ?? [],
+      attachments: selectedAttachments,
       status: MessageStatus.sending,
     );
 
@@ -87,6 +94,7 @@ class ChatController extends GetxController {
         final sent = resp['data'] as MessageDTO..status = MessageStatus.sent;
 
         _replaceTempMessage(key, tempId, sent);
+        attachments.clear();
         scrollToBottom();
         return true;
       } else {
@@ -96,6 +104,55 @@ class ChatController extends GetxController {
     } catch (error) {
       _setMessageStatus(key, tempId, MessageStatus.failed);
       return false;
+    }
+  }
+
+  Future<void> attachFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        withData: true,
+      );
+      if (result == null) return;
+
+      final selected = <AttachmentDTO>[];
+      for (final file in result.files) {
+        final bytes = file.bytes;
+        if (bytes == null) continue;
+
+        selected.add(
+          AttachmentDTO(id: 0, name: file.name, data: base64Encode(bytes)),
+        );
+      }
+
+      if (selected.isEmpty) {
+        Get.snackbar('Erro', 'Não foi possível ler os ficheiros selecionados.');
+        return;
+      }
+
+      attachments.assignAll(selected);
+      await sendMessage();
+    } catch (error) {
+      Get.snackbar('Erro', 'Não foi possível anexar o ficheiro: $error');
+    }
+  }
+
+  Future<void> openAttachment(AttachmentDTO attachment) async {
+    try {
+      final bytes = base64Decode(attachment.data);
+      final tempDirectory = await getTemporaryDirectory();
+      final safeName = attachment.name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final file = File(
+        '${tempDirectory.path}${Platform.pathSeparator}$safeName',
+      );
+      await file.writeAsBytes(bytes, flush: true);
+
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done) {
+        Get.snackbar('Erro', result.message);
+      }
+    } catch (error) {
+      Get.snackbar('Erro', 'Não foi possível abrir o ficheiro: $error');
     }
   }
 

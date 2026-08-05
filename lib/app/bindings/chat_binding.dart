@@ -4,6 +4,8 @@ import '../controllers/index.dart';
 class ChatBinding implements Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ChatController>(() => ChatController());
+    if (!Get.isRegistered<ChatController>()) {
+      Get.lazyPut<ChatController>(() => ChatController());
+    }
   }
 }

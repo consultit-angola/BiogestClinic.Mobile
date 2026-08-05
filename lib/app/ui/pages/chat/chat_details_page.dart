@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -140,14 +143,20 @@ class ChatDetailsPage extends GetView<ChatController> {
                 bottomRight: isMine ? Radius.zero : const Radius.circular(16),
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (!isMine) _buildMessageState(msg, isMine),
-                if (!isMine) const SizedBox(width: 8),
-                _buildMessageText(msg),
-                if (isMine) const SizedBox(width: 8),
-                if (isMine) _buildMessageState(msg, isMine),
+                if (msg.messageText != 'attachDocument') _buildMessageText(msg),
+                if (msg.attachments.isNotEmpty) ...[
+                  if (msg.messageText != 'attachDocument')
+                    const SizedBox(height: 8),
+                  ...msg.attachments.map(_buildAttachment),
+                ],
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildMessageState(msg, isMine),
+                ),
               ],
             ),
           ),
@@ -156,15 +165,96 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
+  Widget _buildAttachment(AttachmentDTO attachment) {
+    final imageBytes = _imageBytes(attachment);
+
+    return InkWell(
+      onTap: () => imageBytes == null
+          ? controller.openAttachment(attachment)
+          : _showImagePreview(attachment, imageBytes),
+      child: Container(
+        width: 210,
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (imageBytes != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  imageBytes,
+                  width: double.infinity,
+                  height: 150,
+                  fit: BoxFit.cover,
+                ),
+              )
+            else
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Icon(
+                    Icons.insert_drive_file,
+                    size: 54,
+                    color: CustomColors.secondaryColor,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 6),
+            Text(
+              attachment.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.black87, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Uint8List? _imageBytes(AttachmentDTO attachment) {
+    final extension = attachment.name.split('.').last.toLowerCase();
+    if (!{'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'}.contains(extension)) {
+      return null;
+    }
+
+    try {
+      return base64Decode(attachment.data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _showImagePreview(AttachmentDTO attachment, Uint8List bytes) {
+    Get.dialog(
+      Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: InteractiveViewer(child: Image.memory(bytes))),
+            TextButton.icon(
+              onPressed: () => controller.openAttachment(attachment),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Abrir ficheiro'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 🔹 Texto del mensaje
   Widget _buildMessageText(MessageDTO msg) {
-    return Flexible(
-      child: Text(
-        msg.messageText,
-        style: const TextStyle(
-          color: CustomColors.witheColor,
-          fontWeight: FontWeight.w600,
-        ),
+    return Text(
+      msg.messageText,
+      style: const TextStyle(
+        color: CustomColors.witheColor,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -243,13 +333,13 @@ class ChatDetailsPage extends GetView<ChatController> {
       color: Colors.grey[200],
       child: Row(
         children: [
-          // GestureDetector(
-          //   onTap: () {},
-          //   child: Icon(
-          //     Icons.attach_file_rounded,
-          //     color: CustomColors.secondaryColor,
-          //   ),
-          // ),
+          GestureDetector(
+            onTap: controller.attachFiles,
+            child: const Icon(
+              Icons.attach_file_rounded,
+              color: CustomColors.secondaryColor,
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
