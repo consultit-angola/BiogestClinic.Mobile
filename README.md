@@ -4,16 +4,22 @@ A new Flutter project.
 
 ## Auto commit
 
-Run the script with the Dart SDK managed by FVM:
+The PowerShell launcher automatically uses the current Git branch:
 
 ```powershell
-.\.fvm\flutter_sdk\bin\dart.bat run tool\auto_commit.dart --branch=<branch-name> --msg="Commit message"
+.\auto-commit.ps1
+```
+
+Add an optional commit message:
+
+```powershell
+.\auto-commit.ps1 "Commit message"
 ```
 
 To pull from `test` after committing and before pushing:
 
 ```powershell
-.\.fvm\flutter_sdk\bin\dart.bat run tool\auto_commit.dart --branch=<branch-name> --msg="Commit message" --pull-from-test
+.\auto-commit.ps1 "Commit message" -PullFromTest
 ```
 
-Use `--pull-branch=<branch-name>` together with `--pull-from-test` when the base branch is not `test`.
+Without a message, the commit uses `Auto commit` followed by the current timestamp.
