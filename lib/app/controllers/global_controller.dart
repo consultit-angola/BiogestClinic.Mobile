@@ -17,6 +17,7 @@ class GlobalController extends GetxController {
   static const int appointmentScheduleManagementPermission = 500;
   static const int viewOtherUsersSchedulePermission = 504;
   static const int globalConfigurationPermission = 25;
+  static const int dashboardViewPermission = 39;
   static const int activityManagementPermission = 750;
 
   final Provider _provider = Provider();
@@ -62,6 +63,8 @@ class GlobalController extends GetxController {
       hasPermission(viewOtherUsersSchedulePermission);
 
   bool get canAccessAlarms => hasPermission(globalConfigurationPermission);
+
+  bool get canAccessDashboard => hasPermission(dashboardViewPermission);
 
   bool get canAccessActivities => hasPermission(activityManagementPermission);
 

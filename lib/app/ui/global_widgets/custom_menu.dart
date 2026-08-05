@@ -41,6 +41,7 @@ Widget customMenu({bool alignBottom = true}) {
               Icons.dashboard_sharp,
               'Dashboard',
               Routes.dashboard,
+              visible: controller.globalController.canAccessDashboard,
             ),
             Expanded(
               child: InkWell(

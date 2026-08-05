@@ -71,11 +71,12 @@ Widget customDrawer() {
                     'Actividades',
                     () => navigate(Routes.activities, 2),
                   ),
-                _drawerItem(
-                  Icons.dashboard_outlined,
-                  'Dashboard',
-                  () => navigate(Routes.dashboard, 3),
-                ),
+                if (globalController.canAccessDashboard)
+                  _drawerItem(
+                    Icons.dashboard_outlined,
+                    'Dashboard',
+                    () => navigate(Routes.dashboard, 3),
+                  ),
                 _drawerItem(Icons.more_horiz, 'Mais', () {
                   Get.back();
                   menuController.openMoreMenu();
