@@ -60,7 +60,7 @@ class AppUpdateService {
         return AppRelease(
           version: _cleanVersion(tagName),
           currentVersion: packageInfo.version,
-          releaseNotes: data['body']?.toString().trim() ?? '',
+          releaseNotes: formatReleaseNotes(data['body']?.toString() ?? ''),
           apkName: name,
           downloadUri: Uri.parse(downloadUrl),
         );
@@ -148,6 +148,37 @@ class AppUpdateService {
     }
 
     return false;
+  }
+
+  static String formatReleaseNotes(String notes) {
+    final formattedLines = <String>[];
+
+    for (final originalLine in notes.split(RegExp(r'\r?\n'))) {
+      var line = originalLine.trim();
+      if (line.isEmpty) continue;
+      if (line.toLowerCase().contains('full changelog')) continue;
+
+      line = line.replaceFirst(RegExp(r'^#{1,6}\s*'), '');
+      line = line.replaceAllMapped(
+        RegExp(r'\*\*(.*?)\*\*'),
+        (match) => match.group(1) ?? '',
+      );
+      line = line.replaceAllMapped(
+        RegExp(r'__(.*?)__'),
+        (match) => match.group(1) ?? '',
+      );
+      line = line.replaceAllMapped(
+        RegExp(r'\[([^\]]+)\]\([^\)]+\)'),
+        (match) => match.group(1) ?? '',
+      );
+      line = line.replaceFirst(RegExp(r'^[-*]\s+'), '• ');
+      line = line.replaceAll(RegExp(r'\s+in\s+https?://\S+$'), '');
+
+      if (line == 'What\'s Changed') continue;
+      if (line.isNotEmpty) formattedLines.add(line);
+    }
+
+    return formattedLines.join('\n');
   }
 
   static String _cleanVersion(String version) {

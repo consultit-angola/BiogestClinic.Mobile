@@ -50,16 +50,21 @@ jobs:
         env:
           VERSION_BUMP: ${{ inputs.bump }}
         run: |
-          current=$(sed -nE 's/^version:[[:space:]]*([^[:space:]]+).*/\1/p' pubspec.yaml)
-          if [[ ! "$current" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\+([0-9]+)$ ]]; then
-            echo "Invalid pubspec version: $current" >&2
+          pubspec_version=$(sed -nE 's/^version:[[:space:]]*([^[:space:]]+).*/\1/p' pubspec.yaml)
+          if [[ ! "$pubspec_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\+([0-9]+)$ ]]; then
+            echo "Invalid pubspec version: $pubspec_version" >&2
             exit 1
           fi
 
-          major=${BASH_REMATCH[1]}
-          minor=${BASH_REMATCH[2]}
-          patch=${BASH_REMATCH[3]}
-          build=${BASH_REMATCH[4]}
+          source_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+          latest_tag=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+          latest_version=${latest_tag#v}
+
+          if [[ -n "$latest_version" ]]; then
+            source_version=$(printf '%s\n%s\n' "$source_version" "$latest_version" | sort -V | tail -n 1)
+          fi
+
+          IFS='.' read -r major minor patch <<< "$source_version"
 
           case "$VERSION_BUMP" in
             major) major=$((major + 1)); minor=0; patch=0 ;;
@@ -69,7 +74,7 @@ jobs:
           esac
 
           version="$major.$minor.$patch"
-          build=$((build + 1))
+          build=$((1000 + GITHUB_RUN_NUMBER))
           tag="v$version"
 
           if git rev-parse "$tag" >/dev/null 2>&1; then

@@ -107,7 +107,9 @@ Examples using a specific branch:
 When in doubt, use `patch` for corrections, `minor` for new functionality, and
 reserve `major` for intentional compatibility breaks. The APK version is
 overridden during the release build; the workflow does not modify the selected
-source branch. Its internal build number is incremented independently.
+source branch. New versions are calculated from the newest semantic version tag
+or `pubspec.yaml`, whichever is higher. Its internal build number is generated
+from the GitHub Actions run number so Android always receives a newer build.
 
 Android requires the `REQUEST_INSTALL_PACKAGES` permission, which is already
 declared in `android/app/src/main/AndroidManifest.xml`. Depending on the Android

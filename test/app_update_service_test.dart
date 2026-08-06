@@ -19,4 +19,29 @@ void main() {
       expect(AppUpdateService.isNewerVersion('v1.0.1', '1.0.0+12'), isTrue);
     });
   });
+
+  group('AppUpdateService.formatReleaseNotes', () {
+    test('removes a standalone full changelog link', () {
+      const notes =
+          '**Full Changelog**: https://github.com/example/app/compare/v1...v2';
+
+      expect(AppUpdateService.formatReleaseNotes(notes), isEmpty);
+    });
+
+    test('formats GitHub markdown as readable text', () {
+      const notes = '''
+## What's Changed
+* **New update screen** by @developer in https://github.com/example/pull/1
+* Show the [installed version](https://github.com/example/pull/2)
+
+**Full Changelog**: https://github.com/example/compare/v1...v2
+''';
+
+      expect(
+        AppUpdateService.formatReleaseNotes(notes),
+        '• New update screen by @developer\n'
+        '• Show the installed version',
+      );
+    });
+  });
 }
