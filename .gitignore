@@ -50,3 +50,7 @@ app.*.map.json
 
 # Codex
 .codex_tmp/
+
+# Signing keys
+/android/key.properties
+*.jks

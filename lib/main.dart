@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,6 +10,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'app/controllers/index.dart';
 import 'app/routes/index.dart';
 import 'app/data/shared/index.dart';
+import 'app/services/app_update_service.dart';
 import 'app/ui/index.dart';
 
 void main() async {
@@ -23,6 +26,7 @@ void main() async {
   Get.put(CustomMenuController());
 
   runApp(const MainApp());
+  unawaited(AppUpdateService().checkForUpdate());
 }
 
 class MainApp extends StatefulWidget {
