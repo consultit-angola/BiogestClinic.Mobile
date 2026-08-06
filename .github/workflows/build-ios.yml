@@ -2,15 +2,13 @@ name: Build iOS
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev-carlos
 
 permissions:
   contents: read
 
 jobs:
   build-ios:
+    if: github.ref == 'refs/heads/main'
     runs-on: macos-latest
     timeout-minutes: 45
 
