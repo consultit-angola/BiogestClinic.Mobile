@@ -1,4 +1,4 @@
-# biogest_clinic_mobile
+# Biogest Clinic - MyBio
 
 A new Flutter project.
 
@@ -55,13 +55,59 @@ used in the comparison.
 
 ### Publishing an update
 
-1. Increment `version` in `pubspec.yaml`.
-2. Build and validate the release APK.
-3. Create a GitHub Release with a tag matching that version, for example
-   `v1.0.2`.
-4. Attach at least one file with the `.apk` extension to the release.
-5. Publish the release. Draft releases are not returned as the latest published
-   version.
+Android releases are built and published by GitHub Actions. From a clean,
+pushed branch, run:
+
+```powershell
+# Current branch, patch increment
+.\release.ps1
+
+# Specific branch and increment
+.\release.ps1 test minor
+```
+
+The command verifies that the branch exists on `origin` and dispatches the
+`release-android.yml` workflow. The workflow calculates the next version, runs
+analysis and tests, builds a signed APK, generates release notes from the
+changes since the previous tag, and publishes both the tag and APK.
+
+Configure these GitHub Actions secrets before the first release:
+
+- `BIOGEST_ENV`
+- `BIOGEST_ANDROID_KEYSTORE_BASE64`
+- `BIOGEST_ANDROID_KEY_ALIAS`
+- `BIOGEST_ANDROID_KEY_PASSWORD`
+- `BIOGEST_ANDROID_STORE_PASSWORD`
+
+#### Choosing the version increment
+
+The application follows semantic versioning in the `MAJOR.MINOR.PATCH` format.
+Choose the increment according to the scope of the release:
+
+- `patch` is for bug fixes, stability improvements, and small internal changes
+  that do not add or break functionality. For example, `1.0.2` becomes `1.0.3`.
+- `minor` is for new backward-compatible features or visible improvements. For
+  example, `1.0.2` becomes `1.1.0`.
+- `major` is for large or incompatible changes that significantly alter the
+  application or its contracts. For example, `1.0.2` becomes `2.0.0`.
+
+Examples using a specific branch:
+
+```powershell
+# Bug fixes: 1.0.2 -> 1.0.3
+.\release.ps1 dev-carlos patch
+
+# New compatible features: 1.0.2 -> 1.1.0
+.\release.ps1 dev-carlos minor
+
+# Large or incompatible changes: 1.0.2 -> 2.0.0
+.\release.ps1 dev-carlos major
+```
+
+When in doubt, use `patch` for corrections, `minor` for new functionality, and
+reserve `major` for intentional compatibility breaks. The APK version is
+overridden during the release build; the workflow does not modify the selected
+source branch. Its internal build number is incremented independently.
 
 Android requires the `REQUEST_INSTALL_PACKAGES` permission, which is already
 declared in `android/app/src/main/AndroidManifest.xml`. Depending on the Android

@@ -1,0 +1,145 @@
+name: Publish Android release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version increment
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: stable
+          cache: true
+
+      - name: Calculate release version
+        id: version
+        shell: bash
+        env:
+          VERSION_BUMP: ${{ inputs.bump }}
+        run: |
+          current=$(sed -nE 's/^version:[[:space:]]*([^[:space:]]+).*/\1/p' pubspec.yaml)
+          if [[ ! "$current" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\+([0-9]+)$ ]]; then
+            echo "Invalid pubspec version: $current" >&2
+            exit 1
+          fi
+
+          major=${BASH_REMATCH[1]}
+          minor=${BASH_REMATCH[2]}
+          patch=${BASH_REMATCH[3]}
+          build=${BASH_REMATCH[4]}
+
+          case "$VERSION_BUMP" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "Unsupported version increment: $VERSION_BUMP" >&2; exit 1 ;;
+          esac
+
+          version="$major.$minor.$patch"
+          build=$((build + 1))
+          tag="v$version"
+
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists." >&2
+            exit 1
+          fi
+
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Restore environment configuration
+        shell: bash
+        env:
+          APP_ENV: ${{ secrets.BIOGEST_ENV }}
+        run: |
+          if [[ -z "$APP_ENV" ]]; then
+            echo "BIOGEST_ENV secret is not configured." >&2
+            exit 1
+          fi
+          printf '%s' "$APP_ENV" > .env
+
+      - name: Restore Android signing key
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.BIOGEST_ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.BIOGEST_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.BIOGEST_ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.BIOGEST_ANDROID_STORE_PASSWORD }}
+        run: |
+          if [[ -z "$KEYSTORE_BASE64" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" || -z "$STORE_PASSWORD" ]]; then
+            echo "Android signing secrets are incomplete." >&2
+            exit 1
+          fi
+
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=release-keystore.jks
+          EOF
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze source code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build signed APK
+        run: >-
+          flutter build apk --release
+          --build-name=${{ steps.version.outputs.name }}
+          --build-number=${{ steps.version.outputs.build }}
+
+      - name: Prepare APK
+        shell: bash
+        run: >-
+          cp build/app/outputs/flutter-apk/app-release.apk
+          BiogestClinic-${{ steps.version.outputs.tag }}.apk
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Biogest Clinic ${{ steps.version.outputs.name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: BiogestClinic-${{ steps.version.outputs.tag }}.apk
