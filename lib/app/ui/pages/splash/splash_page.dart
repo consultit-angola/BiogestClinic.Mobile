@@ -58,7 +58,7 @@ class _PremiumSplash extends StatelessWidget {
 
   Widget _buildWelcomeCard(BuildContext context) {
     return Positioned(
-      top: Get.height * 0.5,
+      top: Get.height * 0.48,
       left: 0,
       right: 0,
       bottom: 0,
