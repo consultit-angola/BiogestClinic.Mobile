@@ -13,313 +13,150 @@ class SplashPage extends GetView<SplashController> {
   Widget build(BuildContext context) {
     return GetBuilder<SplashController>(
       builder: (splashController) =>
-          MySplashPage(splashController: splashController),
+          _PremiumSplash(splashController: splashController),
     );
   }
 }
 
-class MySplashPage extends StatefulWidget {
+class _PremiumSplash extends StatelessWidget {
   final SplashController splashController;
-  const MySplashPage({super.key, required this.splashController});
 
-  @override
-  State<MySplashPage> createState() => _MySplashPageState();
-}
-
-class _MySplashPageState extends State<MySplashPage>
-    with TickerProviderStateMixin {
-  late AnimationController _doctorLeftController;
-  late AnimationController _doctorRightController;
-  late AnimationController _textController;
-  late AnimationController _buttonController;
-
-  late Animation<Offset> _doctorLeftOffset;
-  late Animation<Offset> _doctorRightOffset;
-  late Animation<Offset> _textOffset;
-  late Animation<Offset> _buttonOffset;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Controllers
-    _doctorLeftController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-    _doctorRightController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _buttonController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    // Animations
-    _doctorLeftOffset =
-        Tween<Offset>(begin: const Offset(-1.2, 0), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _doctorLeftController,
-            curve: Curves.easeOutBack,
-          ),
-        );
-
-    _doctorRightOffset =
-        Tween<Offset>(begin: const Offset(1.2, 0), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _doctorRightController,
-            curve: Curves.easeOutBack,
-          ),
-        );
-
-    _textOffset = Tween<Offset>(
-      begin: const Offset(0, 1.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeOut));
-
-    _buttonOffset = Tween<Offset>(begin: const Offset(0, 2.0), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _buttonController, curve: Curves.easeOutBack),
-        );
-
-    // Start animations after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _doctorLeftController.forward();
-      _doctorRightController.forward();
-      Future.delayed(const Duration(seconds: 2), () {
-        _textController.forward();
-        _buttonController.forward();
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _doctorLeftController.dispose();
-    _doctorRightController.dispose();
-    _textController.dispose();
-    _buttonController.dispose();
-    super.dispose();
-  }
+  const _PremiumSplash({required this.splashController});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      backgroundColor: CustomColors.primaryDarkerColor,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(children: [_buildHero(), _buildWelcomeCard(context)]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildHero() {
+    return SizedBox(
+      width: Get.width,
+      height: Get.height,
+      child: Stack(
         children: [
           Image.asset(
-            'assets/images/background.png',
-            width: Get.width,
-            height: Get.height,
-            fit: BoxFit.fill,
+            'assets/images/splash_premium_hero.png',
+            fit: BoxFit.contain,
+            alignment: Alignment.topCenter,
           ),
-          Column(
-            children: [
-              customAppbar(showUserMenu: false),
-              Expanded(child: content(widget.splashController)),
-            ],
+          Positioned(
+            top: Get.height * 0.08,
+            left: Get.width * 0.3,
+            child: SvgPicture.asset('assets/images/logo.svg', height: 48),
           ),
         ],
       ),
     );
   }
 
-  Widget content(SplashController splashController) {
-    return Stack(
-      children: [
-        // Dra
-        Positioned(
-          left: -Get.width * 0.2,
-          bottom: Get.height * 0.35,
-          child: SlideTransition(
-            position: _doctorLeftOffset,
-            child: SvgPicture.asset(
-              'assets/images/dra.svg',
-              width: Get.width * 0.4,
-              height: Get.height * 0.4,
-            ),
-          ),
+  Widget _buildWelcomeCard(BuildContext context) {
+    return Positioned(
+      top: Get.height * 0.5,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: Get.width * 0.08,
+          vertical: Get.height * 0.07,
         ),
-
-        // Dr
-        Positioned(
-          right: -Get.width * 0.18,
-          bottom: Get.height * 0.35,
-          child: SlideTransition(
-            position: _doctorRightOffset,
-            child: SvgPicture.asset(
-              'assets/images/dr.svg',
-              width: Get.width * 0.32,
-              height: Get.height * 0.32,
-            ),
-          ),
+        decoration: const BoxDecoration(
+          color: CustomColors.surfaceColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(42)),
         ),
-
-        Positioned(
-          bottom: 0,
-          left: -Get.width * 0.06,
-          child: Container(
-            height: Get.height * 0.35,
-            width: Get.width * 1.15,
-            decoration: BoxDecoration(
-              color: CustomColors.primaryLightColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(80),
+        child: Column(
+          children: [
+            RichText(
+              textAlign: TextAlign.center,
+              text: const TextSpan(
+                style: TextStyle(
+                  color: CustomColors.textColor,
+                  fontFamily: 'OpenSans',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                ),
+                children: [
+                  TextSpan(text: 'Bem-vindo ao '),
+                  TextSpan(
+                    text: 'myBio',
+                    style: TextStyle(color: CustomColors.primaryColor),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black54,
-                  blurRadius: 30,
-                  offset: const Offset(0, -8),
-                ),
-              ],
             ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: Get.width * 0.23,
-                    vertical: Get.height * 0.03,
+            const SizedBox(height: 24),
+            const Text(
+              'Tudo o que precisa para\nacompanhar o seu dia clínico.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: CustomColors.textColor,
+                fontFamily: 'OpenSans',
+                fontSize: 17,
+                height: 1.55,
+              ),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: FilledButton(
+                onPressed: () => Get.offAllNamed(Routes.login),
+                style: FilledButton.styleFrom(
+                  backgroundColor: CustomColors.secondaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: FadeTransition(
-                    opacity: _textController,
-                    child: SlideTransition(
-                      position: _textOffset,
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          text: 'Bem vindo ao ',
-                          style: Get.textTheme.headlineMedium!.copyWith(
-                            color: CustomColors.witheColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.normal,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: 'myBio',
-                              style: Get.textTheme.headlineMedium!.copyWith(
-                                color: CustomColors.witheColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text:
-                                  ' o aplicativo que vai facilitar a interação com os seus colegas e controlo das suas actividades hospitalares',
-                              style: Get.textTheme.headlineMedium!.copyWith(
-                                color: CustomColors.witheColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
+                  textStyle: const TextStyle(
+                    fontFamily: 'OpenSans',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                child: const Text('Começar'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Switch(
+                  value: splashController.preferences.skipSplash,
+                  activeTrackColor: CustomColors.primaryColor,
+                  onChanged: (value) {
+                    splashController.preferences.skipSplash = value;
+                    splashController.update();
+                  },
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      splashController.preferences.skipSplash =
+                          !splashController.preferences.skipSplash;
+                      splashController.update();
+                    },
+                    child: const Text(
+                      'Não mostrar novamente',
+                      style: TextStyle(
+                        color: CustomColors.mutedTextColor,
+                        fontFamily: 'OpenSans',
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ),
-
-                // Button
-                SlideTransition(
-                  position: _buttonOffset,
-                  child: Material(
-                    elevation: 8,
-                    shadowColor: Colors.black.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(45),
-                    color: CustomColors.secondaryColor,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(45),
-                      onTap: () => Get.offAllNamed(Routes.login),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          'SEGUINTE',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: Get.width * 0.1,
-                    vertical: Get.height * 0.02,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Transform.scale(
-                        scale: 0.7,
-                        child: Switch(
-                          activeThumbColor: CustomColors.primaryDarkerColor,
-                          value: splashController.preferences.skipSplash,
-                          onChanged: (value) {
-                            setState(() {
-                              splashController.preferences.skipSplash = value;
-                            });
-                          },
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            splashController.preferences.skipSplash =
-                                !splashController.preferences.skipSplash;
-                          });
-                        },
-                        child: Text(
-                          'Não mostrar esta tela novamente',
-                          style: Get.textTheme.bodyMedium!.copyWith(
-                            color: CustomColors.witheColor,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
-          ),
+          ],
         ),
-
-        // Logos
-        Positioned(
-          bottom: 0,
-          child: Container(
-            height: Get.height * 0.06,
-            width: Get.width,
-            color: CustomColors.witheColor,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(left: Get.width * 0.05),
-                    child: SvgPicture.asset('assets/images/consultit_logo.svg'),
-                  ),
-                ),
-                const Expanded(flex: 2, child: SizedBox()),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(right: Get.width * 0.05),
-                    child: Image.asset('assets/images/biogest_logo.jpg'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

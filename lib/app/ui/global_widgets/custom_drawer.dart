@@ -77,11 +77,6 @@ Widget customDrawer() {
                     'Dashboard',
                     () => navigate(Routes.dashboard, 3),
                   ),
-                _drawerItem(Icons.more_horiz, 'Mais', () {
-                  Get.back();
-                  menuController.openMoreMenu();
-                }),
-                const Divider(height: 28),
                 _drawerItem(
                   Icons.chat_bubble_outline,
                   'Chat',
@@ -98,6 +93,7 @@ Widget customDrawer() {
                   'Utilizador',
                   () => navigate(Routes.user, -1),
                 ),
+                const Divider(height: 28),
                 _drawerItem(
                   Icons.delete_sweep_outlined,
                   'Limpar cache',

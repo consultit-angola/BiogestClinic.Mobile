@@ -11,39 +11,17 @@ class AlarmPage extends GetView<AlarmController> {
   Widget build(BuildContext context) {
     return GetBuilder<AlarmController>(
       builder: (alarmController) => Scaffold(
+        backgroundColor: CustomColors.backgroundColor,
         drawer: customDrawer(),
-        resizeToAvoidBottomInset: false,
-        body: Container(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/background.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Column(
-            children: [
-              customAppbar(),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Flexible(
-                      child: Obx(
-                        () => Column(
-                          children: [
-                            search(),
-                            Expanded(child: alarmInstancesList()),
-                          ],
-                        ),
-                      ),
-                    ),
-                    customMenu(),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            customAppbar(),
+            Padding(padding: const EdgeInsets.only(top: 10.0), child: search()),
+            Expanded(child: alarmInstancesList()),
+          ],
         ),
+        bottomNavigationBar: customMenu(alignBottom: false),
       ),
     );
   }
@@ -152,21 +130,18 @@ class AlarmPage extends GetView<AlarmController> {
         );
       }).toList();
 
-      return Padding(
-        padding: EdgeInsets.only(bottom: Get.height * 0.02),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: widgetList.isNotEmpty
-              ? widgetList
-              : [
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('Nenhuma notificação encontrada'),
-                    ),
+      return ListView(
+        padding: EdgeInsets.zero,
+        children: widgetList.isNotEmpty
+            ? widgetList
+            : [
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text('Nenhuma notificação encontrada'),
                   ),
-                ],
-        ),
+                ),
+              ],
       );
     });
   }

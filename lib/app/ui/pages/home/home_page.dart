@@ -12,45 +12,47 @@ class HomePage extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: CustomColors.backgroundColor,
-      drawer: customDrawer(),
-      body: Column(
-        children: [
-          customAppbar(),
-          Expanded(
-            child: Obx(
-              () => RefreshIndicator(
-                onRefresh: controller.loadToday,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
-                  children: [
-                    _sectionTitle(
-                      'Agenda de hoje',
-                      action: 'Ver agenda',
-                      onTap: () {
-                        CustomMenuController.to.selectItem(1);
-                        Get.toNamed(Routes.calendar);
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _agendaMetrics(),
-                    const SizedBox(height: 20),
-                    _sectionTitle('Próximos pacientes'),
-                    const SizedBox(height: 10),
-                    _patientsCard(),
-                    const SizedBox(height: 20),
-                    _sectionTitle('Resumo do dia'),
-                    const SizedBox(height: 10),
-                    _summaryCard(),
-                  ],
+    return GetBuilder<HomeController>(
+      builder: (homeController) => Scaffold(
+        backgroundColor: CustomColors.backgroundColor,
+        drawer: customDrawer(),
+        body: Column(
+          children: [
+            customAppbar(),
+            Expanded(
+              child: Obx(
+                () => RefreshIndicator(
+                  onRefresh: homeController.loadToday,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
+                    children: [
+                      _sectionTitle(
+                        'Agenda de hoje',
+                        action: 'Ver agenda',
+                        onTap: () {
+                          CustomMenuController.to.selectItem(1);
+                          Get.toNamed(Routes.calendar);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _agendaMetrics(homeController),
+                      const SizedBox(height: 20),
+                      _sectionTitle('Próximos pacientes'),
+                      const SizedBox(height: 10),
+                      _patientsCard(homeController),
+                      const SizedBox(height: 20),
+                      _sectionTitle('Resumo do dia'),
+                      const SizedBox(height: 10),
+                      _summaryCard(homeController),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        bottomNavigationBar: customMenu(alignBottom: false),
       ),
-      bottomNavigationBar: customMenu(alignBottom: false),
     );
   }
 
@@ -90,35 +92,35 @@ class HomePage extends GetView<HomeController> {
         ],
       );
 
-  Widget _agendaMetrics() => SizedBox(
+  Widget _agendaMetrics(HomeController homeController) => SizedBox(
     height: 124,
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _metric(
           'Consultas\nagendadas',
-          controller.countStates(['Scheduled', 'Confirmed', 'ReScheduled']),
+          homeController.countStates(['Scheduled', 'Confirmed', 'ReScheduled']),
           Icons.event_available_outlined,
           CustomColors.primaryColor,
         ),
         const SizedBox(width: 6),
         _metric(
           'Consultas\ncanceladas',
-          controller.countStates(['Canceled', 'DeScheduled']),
+          homeController.countStates(['Canceled', 'DeScheduled']),
           Icons.event_busy_outlined,
           CustomColors.tertiaryColor,
         ),
         const SizedBox(width: 6),
         _metric(
           'Não\ncomparecidas',
-          controller.countStates(['DidNotAttend']),
+          homeController.countStates(['DidNotAttend']),
           Icons.person_off_outlined,
           CustomColors.warningColor,
         ),
         const SizedBox(width: 6),
         _metric(
           'Consultas\nconcluídas',
-          controller.countStates(['AllFinished', 'ServicesFinished']),
+          homeController.countStates(['AllFinished', 'ServicesFinished']),
           Icons.task_alt_outlined,
           CustomColors.secondaryColor,
         ),
@@ -168,11 +170,11 @@ class HomePage extends GetView<HomeController> {
         ),
       );
 
-  Widget _patientsCard() {
-    if (controller.loading.value) {
+  Widget _patientsCard(HomeController homeController) {
+    if (homeController.loading.value) {
       return _emptyCard('A carregar pacientes...');
     }
-    final appointments = controller.upcomingAppointments;
+    final appointments = homeController.upcomingAppointments;
     if (appointments.isEmpty) {
       return _emptyCard('Sem próximos pacientes para hoje.');
     }
@@ -316,20 +318,20 @@ class HomePage extends GetView<HomeController> {
     );
   }
 
-  Widget _summaryCard() {
-    final total = controller.todayAppointments.length;
-    final scheduled = controller.countStates([
+  Widget _summaryCard(HomeController homeController) {
+    final total = homeController.todayAppointments.length;
+    final scheduled = homeController.countStates([
       'Scheduled',
       'Confirmed',
       'ReScheduled',
     ]);
-    final concluded = controller.countStates([
+    final concluded = homeController.countStates([
       'AllFinished',
       'ServicesFinished',
     ]);
-    final inProgress = controller.countStates(['BeingPerformed']);
-    final canceled = controller.countStates(['Canceled', 'DeScheduled']);
-    final absent = controller.countStates(['DidNotAttend']);
+    final inProgress = homeController.countStates(['BeingPerformed']);
+    final canceled = homeController.countStates(['Canceled', 'DeScheduled']);
+    final absent = homeController.countStates(['DidNotAttend']);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
