@@ -21,21 +21,10 @@ class ChatDetailsPage extends GetView<ChatController> {
     });
 
     return Scaffold(
+      backgroundColor: CustomColors.backgroundColor,
       drawer: customDrawer(),
-      body: Stack(
-        children: [
-          // Fondo
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/background.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // Contenido principal
-          Column(children: [customAppbar(), buttonBack(), _buildChatArea()]),
-        ],
-      ),
+      body: Column(children: [customAppbar(), buttonBack(), _buildChatArea()]),
+      bottomNavigationBar: customMenu(alignBottom: false),
     );
   }
 
@@ -195,16 +184,7 @@ class ChatDetailsPage extends GetView<ChatController> {
                 ),
               )
             else
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Icon(
-                    Icons.insert_drive_file,
-                    size: 54,
-                    color: CustomColors.secondaryColor,
-                  ),
-                ),
-              ),
+              _buildFileIcon(attachment.name),
             const SizedBox(height: 6),
             Text(
               attachment.name,
@@ -214,6 +194,75 @@ class ChatDetailsPage extends GetView<ChatController> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFileIcon(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    IconData icon;
+    Color color;
+
+    switch (extension) {
+      case 'pdf':
+        icon = Icons.picture_as_pdf;
+        color = Colors.red;
+        break;
+      case 'txt':
+      case 'rtf':
+        icon = Icons.description;
+        color = Colors.blueGrey;
+        break;
+      case 'doc':
+      case 'docx':
+      case 'odt':
+        icon = Icons.article;
+        color = Colors.blue;
+        break;
+      case 'xls':
+      case 'xlsx':
+      case 'csv':
+      case 'ods':
+        icon = Icons.table_chart;
+        color = Colors.green;
+        break;
+      case 'ppt':
+      case 'pptx':
+      case 'odp':
+        icon = Icons.slideshow;
+        color = Colors.orange;
+        break;
+      case 'zip':
+      case 'rar':
+      case '7z':
+      case 'tar':
+      case 'gz':
+        icon = Icons.folder_zip;
+        color = Colors.amber.shade800;
+        break;
+      case 'mp3':
+      case 'wav':
+      case 'aac':
+      case 'ogg':
+        icon = Icons.audio_file;
+        color = Colors.purple;
+        break;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'mkv':
+        icon = Icons.video_file;
+        color = Colors.deepPurple;
+        break;
+      default:
+        icon = Icons.insert_drive_file;
+        color = CustomColors.secondaryColor;
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Icon(icon, size: 54, color: color),
       ),
     );
   }

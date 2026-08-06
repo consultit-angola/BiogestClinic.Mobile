@@ -284,20 +284,21 @@ class _LoginHeroShapePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = CustomColors.secundaryDarkerColor;
-    final rightShape = Path()
-      ..moveTo(size.width * 0.66, 0)
+    final upShape = Path()
+      ..moveTo(size.width * 0.85, 0)
+      ..lineTo(size.width * 0.7, size.height * 0.3)
+      ..lineTo(size.width * 0.9, size.height * 0.6)
+      ..lineTo(size.width, size.height * 0.45)
       ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height * 0.72)
-      ..lineTo(size.width * 0.79, size.height * 0.52)
-      ..lineTo(size.width * 0.92, size.height * 0.30)
       ..close();
-    canvas.drawPath(rightShape, paint);
+    canvas.drawPath(upShape, paint);
 
     final lowerShape = Path()
-      ..moveTo(size.width * 0.80, size.height * 0.53)
-      ..lineTo(size.width, size.height * 0.72)
+      ..moveTo(size.width * 0.9, size.height * 0.6)
+      ..lineTo(size.width * 0.7, size.height)
       ..lineTo(size.width, size.height)
-      ..lineTo(size.width * 0.61, size.height)
+      ..lineTo(size.width, size.height * 0.8)
+      ..lineTo(size.width * 0.9, size.height * 0.6)
       ..close();
     canvas.drawPath(lowerShape, paint);
   }

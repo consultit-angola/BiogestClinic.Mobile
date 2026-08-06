@@ -15,40 +15,19 @@ class ChatPage extends GetView<ChatController> {
   Widget build(BuildContext context) {
     return GetBuilder<ChatController>(
       builder: (chatController) => Scaffold(
+        backgroundColor: CustomColors.backgroundColor,
         drawer: customDrawer(),
-        resizeToAvoidBottomInset: false,
-        body: Stack(
+        body: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    CustomColors.witheColor,
-                    CustomColors.secondaryColor.withValues(alpha: 0.3),
-                  ],
-                ),
-              ),
-            ),
-            Stack(
-              children: [
-                Column(
-                  children: [
-                    customAppbar(),
-                    search(chatController),
-                    Obx(() {
-                      final messagesMap =
-                          chatController.globalController.messages;
-                      return lastMessages(chatController, messagesMap);
-                    }),
-                  ],
-                ),
-                customMenu(),
-              ],
-            ),
+            customAppbar(),
+            search(chatController),
+            Obx(() {
+              final messagesMap = chatController.globalController.messages;
+              return lastMessages(chatController, messagesMap);
+            }),
           ],
         ),
+        bottomNavigationBar: customMenu(alignBottom: false),
       ),
     );
   }

@@ -81,6 +81,10 @@ class HomeController extends GetxController {
 
   List<AppointmentDTO> get upcomingAppointments {
     final now = DateTime.now();
+    final inProgress = globalController.getEnumEntryIdsByName(
+      'AppointmentStateEnum',
+      ['BeingPerformed'],
+    );
     final excluded = globalController.getEnumEntryIdsByName(
       'AppointmentStateEnum',
       [
@@ -94,7 +98,8 @@ class HomeController extends GetxController {
     return todayAppointments
         .where(
           (appointment) =>
-              (appointment.scheduleStartDate?.isAfter(now) ?? false) &&
+              ((appointment.scheduleStartDate?.isAfter(now) ?? false) ||
+                  inProgress.contains(appointment.state?.id)) &&
               !excluded.contains(appointment.state?.id),
         )
         .take(4)

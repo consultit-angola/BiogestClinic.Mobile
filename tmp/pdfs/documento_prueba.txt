@@ -1,0 +1,6 @@
+Documento TXT de prueba
+
+Archivo creado para comprobar la seleccion y carga de documentos de texto
+en Biogest Clinic Mobile.
+
+Contenido de prueba: TXT valido en UTF-8.
