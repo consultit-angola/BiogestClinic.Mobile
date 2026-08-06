@@ -3,6 +3,7 @@ export 'global_widgets/custom_drawer.dart';
 export 'global_widgets/custom_menu.dart';
 export 'global_widgets/custom_select_field.dart';
 export 'pages/alarm/alarm_page.dart';
+export 'pages/app_update/app_update_page.dart';
 export 'pages/api_settings/api_settings_page.dart';
 export 'pages/chat/chat_page.dart';
 export 'pages/chat/chat_details_page.dart';

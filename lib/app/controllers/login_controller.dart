@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
@@ -16,6 +17,7 @@ class LoginController extends GetxController {
   final formKey = GlobalKey<FormBuilderState>();
   RxBool mostrarPass = false.obs;
   RxBool rememberSession = true.obs;
+  RxString appVersion = ''.obs;
   final Provider _provider = Provider();
 
   final Preferences _pref = Preferences();
@@ -26,6 +28,21 @@ class LoginController extends GetxController {
   String selectedStoreName = '';
 
   RxBool tryLogin = true.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      appVersion.value = packageInfo.version;
+    } catch (_) {
+      appVersion.value = '';
+    }
+  }
 
   Future<List<StoreDTO>> getStore() async {
     EasyLoading.show();

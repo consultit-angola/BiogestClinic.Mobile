@@ -121,9 +121,9 @@ class LoginPage extends GetView<LoginController> {
                                 ),
                               ),
                             ),
-                            const Column(
+                            Column(
                               children: [
-                                Text(
+                                const Text(
                                   '© 2026 Biogest Clinic. Todos os direitos reservados.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -131,14 +131,19 @@ class LoginPage extends GetView<LoginController> {
                                     fontSize: 11,
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Versão 1.0.0',
-                                  style: TextStyle(
-                                    color: CustomColors.mutedTextColor,
-                                    fontSize: 11,
+                                if (loginController
+                                    .appVersion
+                                    .value
+                                    .isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Versão ${loginController.appVersion.value}',
+                                    style: const TextStyle(
+                                      color: CustomColors.mutedTextColor,
+                                      fontSize: 11,
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 24),

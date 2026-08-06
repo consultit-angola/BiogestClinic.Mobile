@@ -8,6 +8,7 @@ import '../ui/index.dart';
 
 abstract class AppPages {
   static final pages = [
+    GetPage(name: Routes.appUpdate, page: () => const AppUpdatePage()),
     GetPage(name: Routes.splash, page: () => const SplashPage()),
     GetPage(
       name: Routes.login,

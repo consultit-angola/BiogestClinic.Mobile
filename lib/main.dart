@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,7 +8,6 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'app/controllers/index.dart';
 import 'app/routes/index.dart';
 import 'app/data/shared/index.dart';
-import 'app/services/app_update_service.dart';
 import 'app/ui/index.dart';
 
 void main() async {
@@ -21,12 +18,12 @@ void main() async {
   configLoading();
 
   Get.put(GlobalController());
+  Get.put(AppUpdateController());
   Get.put(SplashController());
   Get.put(LoginController());
   Get.put(CustomMenuController());
 
   runApp(const MainApp());
-  unawaited(AppUpdateService().checkForUpdate());
 }
 
 class MainApp extends StatefulWidget {
@@ -37,13 +34,6 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  final prefs = Preferences();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -56,7 +46,7 @@ class _MainAppState extends State<MainApp> {
           debugShowCheckedModeBanner: false,
           title: 'MyBio',
           getPages: AppPages.pages,
-          initialRoute: prefs.skipSplash ? Routes.login : Routes.splash,
+          initialRoute: Routes.appUpdate,
           builder: EasyLoading.init(),
           theme: ThemeData(
             textSelectionTheme: TextSelectionThemeData(
