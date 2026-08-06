@@ -55,15 +55,19 @@ used in the comparison.
 
 ### Publishing an update
 
-Android releases are built and published by GitHub Actions. From a clean,
-pushed branch, run:
+Android production releases are built from the remote `main` branch and
+published by GitHub Actions. From a clean repository, use the Git alias:
 
 ```powershell
-# Current branch, patch increment
-.\release.ps1
+# Production patch release from main
+git release-android main patch
+```
 
-# Specific branch and increment
-.\release.ps1 test minor
+The alias calls the tracked PowerShell launcher internally. The equivalent
+command, useful in a clone where the alias has not been configured, is:
+
+```powershell
+.\release.ps1 main patch
 ```
 
 The command verifies that the branch exists on `origin` and dispatches the
@@ -91,18 +95,22 @@ Choose the increment according to the scope of the release:
 - `major` is for large or incompatible changes that significantly alter the
   application or its contracts. For example, `1.0.2` becomes `2.0.0`.
 
-Examples using a specific branch:
+Production examples:
 
 ```powershell
 # Bug fixes: 1.0.2 -> 1.0.3
-.\release.ps1 dev-carlos patch
+git release-android main patch
 
 # New compatible features: 1.0.2 -> 1.1.0
-.\release.ps1 dev-carlos minor
+git release-android main minor
 
 # Large or incompatible changes: 1.0.2 -> 2.0.0
-.\release.ps1 dev-carlos major
+git release-android main major
 ```
+
+Do not publish a normal GitHub Release from `test` or a development branch.
+The mobile application checks the latest published release globally, so clients
+could receive a build that has not passed through `main`.
 
 When in doubt, use `patch` for corrections, `minor` for new functionality, and
 reserve `major` for intentional compatibility breaks. The APK version is
