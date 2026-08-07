@@ -113,6 +113,7 @@ class AppUpdatePage extends GetView<AppUpdateController> {
                     const SizedBox(height: 8),
                     Expanded(
                       child: SingleChildScrollView(
+                        primary: false,
                         child: Text(
                           release.releaseNotes.isEmpty
                               ? 'Melhorias de desempenho e estabilidade.'

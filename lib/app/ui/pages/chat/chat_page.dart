@@ -69,7 +69,11 @@ class ChatPage extends GetView<ChatController> {
     }
 
     return Expanded(
-      child: ListView(padding: EdgeInsets.zero, children: lastMessages),
+      child: ListView(
+        primary: false,
+        padding: EdgeInsets.zero,
+        children: lastMessages,
+      ),
     );
   }
 

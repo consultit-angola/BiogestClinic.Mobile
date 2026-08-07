@@ -40,6 +40,7 @@ Future<int?> showCustomSingleSelectDialog({
                 const SizedBox(height: 8),
                 Expanded(
                   child: ListView(
+                    primary: false,
                     children: [
                       ListTile(
                         leading: Icon(
@@ -165,6 +166,7 @@ Future<Set<int>?> showCustomMultiSelectDialog({
                       : !searching && visibleOptions.isEmpty
                       ? const Center(child: Text('Nenhum resultado'))
                       : ListView.builder(
+                          primary: false,
                           itemCount: visibleOptions.length,
                           itemBuilder: (context, index) {
                             final option = visibleOptions[index];

@@ -137,14 +137,14 @@ jobs:
         shell: bash
         run: >-
           cp build/app/outputs/flutter-apk/app-release.apk
-          BiogestClinic-${{ steps.version.outputs.tag }}.apk
+          MyBio-${{ steps.version.outputs.tag }}.apk
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Biogest Clinic ${{ steps.version.outputs.name }}
+          name: MyBio ${{ steps.version.outputs.name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: BiogestClinic-${{ steps.version.outputs.tag }}.apk
+          files: MyBio-${{ steps.version.outputs.tag }}.apk

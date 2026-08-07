@@ -44,6 +44,7 @@ class UserPage extends GetView<UserController> {
       color: CustomColors.primaryColor,
       onRefresh: userController.loadStores,
       child: SingleChildScrollView(
+        primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
         child: Column(

@@ -33,6 +33,7 @@ class DashboardPage extends GetView<DashboardController> {
                   controller.loadRealTimeStatistics(),
                 ]),
                 child: ListView(
+                  primary: false,
                   padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
                   children: [
                     const Text(
@@ -332,6 +333,7 @@ class DashboardPage extends GetView<DashboardController> {
           ),
           const SizedBox(height: 12),
           SingleChildScrollView(
+            primary: false,
             scrollDirection: Axis.horizontal,
             child: SizedBox(
               width: chartWidth,
@@ -786,6 +788,7 @@ class DashboardPage extends GetView<DashboardController> {
           ),
           const SizedBox(height: 8),
           GridView.count(
+            primary: false,
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

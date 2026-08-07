@@ -523,6 +523,39 @@ class Provider {
     }
   }
 
+  Future<Map<String, dynamic>> getEmployeeAbsences(
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/EmployeeAbsence/Search');
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+
+      final activities = <EmployeeAbsenceDTO>[];
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as List;
+        activities.addAll(
+          data.map(
+            (activity) =>
+                EmployeeAbsenceDTO.fromJson(activity as Map<String, dynamic>),
+          ),
+        );
+        return {'ok': true, 'data': activities};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': activities};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
   Future<Map<String, dynamic>> getDashboardFullStatistics({
     required DateTime startDate,
     required DateTime endDate,

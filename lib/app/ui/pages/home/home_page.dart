@@ -24,6 +24,8 @@ class HomePage extends GetView<HomeController> {
                 () => RefreshIndicator(
                   onRefresh: homeController.loadToday,
                   child: ListView(
+                    primary: false,
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
                     children: [
                       _sectionTitle(

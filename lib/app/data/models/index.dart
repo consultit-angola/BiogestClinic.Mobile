@@ -8,6 +8,7 @@ export 'auth_model.dart';
 export 'broadcast_channel_model.dart';
 export 'calendar_filter_option_model.dart';
 export 'employee_model.dart';
+export 'employee_absence_model.dart';
 export 'enum_entry_model.dart';
 export 'message_model.dart';
 export 'refresh_token_model.dart';

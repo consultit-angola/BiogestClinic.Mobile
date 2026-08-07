@@ -57,105 +57,105 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
     final availableApiNames = ApiConfig.availableApiNames;
 
     return Scaffold(
+      backgroundColor: CustomColors.backgroundColor,
       drawer: customDrawer(),
-      body: Stack(
+      body: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  CustomColors.witheColor,
-                  CustomColors.secondaryColor.withValues(alpha: 0.3),
+          customAppbar(),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: Get.width * 0.06,
+                vertical: Get.height * 0.02,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Configuração de API',
+                    style: Get.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: Get.height * 0.01),
+                  Text(
+                    'Escolha o ambiente publicado que a aplicação deve usar neste dispositivo.',
+                    style: Get.textTheme.bodyMedium,
+                  ),
+                  SizedBox(height: Get.height * 0.02),
+                  Card(
+                    color: CustomColors.surfaceColor,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'API atual: ${ApiConfig.activeApiName}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          SelectableText(
+                            ApiConfig.activeApiUrl,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: Get.height * 0.02),
+                  Expanded(
+                    child: Card(
+                      color: CustomColors.surfaceColor,
+                      child: ListView(
+                        primary: false,
+                        children: availableApiNames.map((apiName) {
+                          final isSelected = apiName == _selectedApiName;
+                          return ListTile(
+                            leading: Icon(
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_off,
+                              color: isSelected
+                                  ? CustomColors.primaryLightColor
+                                  : null,
+                            ),
+                            title: Text(apiName),
+                            subtitle: Text(
+                              ApiConfig.buildApiUrl(apiName),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            onTap: () {
+                              setState(() {
+                                _selectedApiName = apiName;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: Get.height * 0.02),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CustomColors.primaryDarkerColor,
+                      ),
+                      onPressed: _saveApiSelection,
+                      child: const Text(
+                        'Guardar e reiniciar sessão',
+                        style: TextStyle(color: CustomColors.witheColor),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          Column(children: [customAppbar()]),
-          Padding(
-            padding: EdgeInsets.only(
-              top: Get.height * 0.18,
-              left: Get.width * 0.06,
-              right: Get.width * 0.06,
-              bottom: Get.height * 0.04,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Configuração de API',
-                  style: Get.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: Get.height * 0.01),
-                Text(
-                  'Escolha o ambiente publicado que a aplicação deve usar neste dispositivo.',
-                  style: Get.textTheme.bodyMedium,
-                ),
-                SizedBox(height: Get.height * 0.02),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'API atual: ${ApiConfig.activeApiName}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        SelectableText(
-                          ApiConfig.activeApiUrl,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: Get.height * 0.02),
-                Expanded(
-                  child: Card(
-                    child: ListView(
-                      children: availableApiNames.map((apiName) {
-                        final isSelected = apiName == _selectedApiName;
-                        return ListTile(
-                          leading: Icon(
-                            isSelected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_off,
-                            color: isSelected
-                                ? CustomColors.primaryLightColor
-                                : null,
-                          ),
-                          title: Text(apiName),
-                          subtitle: Text(
-                            ApiConfig.buildApiUrl(apiName),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _selectedApiName = apiName;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveApiSelection,
-                    child: const Text('Guardar e reiniciar sessão'),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
+      bottomNavigationBar: customMenu(alignBottom: false),
     );
   }
 }

@@ -17,8 +17,28 @@ class CalendarPage extends GetView<CalendarController> {
         body: Column(
           children: [
             customAppbar(),
-            calendarFilters(calendarController, context),
-            Expanded(child: Obx(calendar)),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) => RefreshIndicator(
+                  onRefresh: () => calendarController.refreshAppointments(),
+                  child: ListView(
+                    primary: false,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraints.maxHeight,
+                        child: Column(
+                          children: [
+                            calendarFilters(calendarController, context),
+                            Expanded(child: Obx(calendar)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
         bottomNavigationBar: customMenu(alignBottom: false),
@@ -107,6 +127,7 @@ class CalendarPage extends GetView<CalendarController> {
                   ),
                   Expanded(
                     child: ListView(
+                      primary: false,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       children: [
                         if (controller.canViewOtherUsersAppointments)
@@ -339,43 +360,56 @@ class CalendarPage extends GetView<CalendarController> {
   }
 
   Widget calendar() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: Get.width * 0.03),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: Get.width * 0.02),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: CustomColors.borderColor),
-        ),
-        child: Calendar(
-          topRowIconColor: CustomColors.primaryDarkerColor,
-          bottomBarColor: CustomColors.primaryLightColor,
-          startOnMonday: true,
-          weekDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-          eventsList: controller.globalController.eventList.toList(),
-          isExpandable: true,
-          eventDoneColor: CustomColors.secondaryColor,
-          selectedColor: CustomColors.tertiaryColor,
-          selectedTodayColor: Colors.red,
-          todayColor: CustomColors.primaryColor,
-          eventColor: null,
-          locale: 'pt_PT',
-          todayButtonText: 'Hoje',
-          allDayEventText: 'O dia todo',
-          multiDayEndText: 'Fim',
-          isExpanded: true,
-          expandableDateFormat: 'EEEE, dd. MMMM yyyy',
-          datePickerType: DatePickerType.date,
-          onPrintLog: (_) {},
-          dayOfWeekStyle: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
+    return Stack(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: Get.width * 0.03),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: Get.width * 0.02),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: CustomColors.borderColor),
+            ),
+            child: Calendar(
+              topRowIconColor: CustomColors.primaryDarkerColor,
+              bottomBarColor: CustomColors.primaryLightColor,
+              startOnMonday: true,
+              weekDays: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+              eventsList: controller.globalController.eventList.toList(),
+              isExpandable: true,
+              eventDoneColor: CustomColors.secondaryColor,
+              selectedColor: CustomColors.tertiaryColor,
+              selectedTodayColor: Colors.red,
+              todayColor: CustomColors.primaryColor,
+              eventColor: null,
+              locale: 'pt_PT',
+              todayButtonText: 'Hoje',
+              allDayEventText: 'O dia todo',
+              multiDayEndText: 'Fim',
+              isExpanded: true,
+              expandableDateFormat: 'EEEE, dd. MMMM yyyy',
+              datePickerType: DatePickerType.date,
+              onPrintLog: (_) {},
+              dayOfWeekStyle: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+              onMonthChanged: controller.onMonthChanged,
+            ),
           ),
-          onMonthChanged: controller.onMonthChanged,
         ),
-      ),
+        if (controller.isMonthLoading.value)
+          Positioned.fill(
+            child: AbsorbPointer(
+              child: ColoredBox(
+                color: Colors.white70,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

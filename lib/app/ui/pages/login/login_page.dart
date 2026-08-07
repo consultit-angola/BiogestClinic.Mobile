@@ -32,6 +32,7 @@ class LoginPage extends GetView<LoginController> {
                         loginController.stores = snapshot.data!;
                       }
                       return SingleChildScrollView(
+                        primary: false,
                         child: Column(
                           children: [
                             _hero(),

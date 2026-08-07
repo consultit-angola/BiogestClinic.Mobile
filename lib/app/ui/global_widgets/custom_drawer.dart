@@ -52,6 +52,7 @@ Widget customDrawer() {
           ),
           Expanded(
             child: ListView(
+              primary: false,
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
                 _drawerItem(

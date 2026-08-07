@@ -32,6 +32,7 @@ class CalendarController extends GetxController {
   int? selectedMedicalSpecialtyID;
   bool showCanceled = false;
   bool filterOptionsLoaded = false;
+  final RxBool isMonthLoading = false.obs;
   final Set<String> _loadingFilters = {};
   String? _lastEmployeeSearch;
   String? _lastClientSearch;
@@ -265,13 +266,22 @@ class CalendarController extends GetxController {
   void onMonthChanged(DateTime month) {
     _rangeStartDate = DateTime.utc(month.year, month.month, 1, 0, 0, 0);
     _rangeEndDate = DateTime.utc(month.year, month.month + 1, 0, 23, 59, 59);
-    refreshAppointments();
+    refreshAppointments(showMonthLoading: true);
   }
 
-  Future<void> refreshAppointments() {
-    return globalController.getAppts(
-      pStartDate: _rangeStartDate,
-      pEndDate: _rangeEndDate,
-    );
+  Future<void> refreshAppointments({bool showMonthLoading = false}) async {
+    if (showMonthLoading) {
+      isMonthLoading.value = true;
+    }
+    try {
+      await globalController.getAppts(
+        pStartDate: _rangeStartDate,
+        pEndDate: _rangeEndDate,
+      );
+    } finally {
+      if (showMonthLoading) {
+        isMonthLoading.value = false;
+      }
+    }
   }
 }

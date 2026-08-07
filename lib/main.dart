@@ -15,7 +15,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await prefs.initPrefs();
   await dotenv.load(fileName: ".env");
-  configLoading();
 
   Get.put(GlobalController());
   Get.put(AppUpdateController());
@@ -36,6 +35,7 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
+    configLoading();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     return SafeArea(
       child: ScreenUtilInit(
@@ -47,6 +47,7 @@ class _MainAppState extends State<MainApp> {
           title: 'MyBio',
           getPages: AppPages.pages,
           initialRoute: Routes.appUpdate,
+          scrollBehavior: const AppScrollBehavior(),
           builder: EasyLoading.init(),
           theme: ThemeData(
             textSelectionTheme: TextSelectionThemeData(
@@ -63,6 +64,29 @@ class _MainAppState extends State<MainApp> {
   }
 }
 
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    final primaryController = PrimaryScrollController.maybeOf(context);
+    final hasExclusiveController = !identical(
+      details.controller,
+      primaryController,
+    );
+
+    return Scrollbar(
+      controller: details.controller,
+      thumbVisibility: hasExclusiveController,
+      child: child,
+    );
+  }
+}
+
 void configLoading() {
   EasyLoading.instance
     ..displayDuration = const Duration(milliseconds: 2000)
@@ -71,11 +95,19 @@ void configLoading() {
     ..maskType = EasyLoadingMaskType.custom
     ..indicatorSize = 45.0
     ..radius = 10.0
-    ..progressColor = Colors.white
-    ..backgroundColor = Colors.black.withValues(alpha: 0.35)
-    ..indicatorColor = Colors.white
-    ..textColor = Colors.white
-    ..maskColor = Colors.black.withValues(alpha: 0.02)
+    ..progressColor = CustomColors.primaryColor
+    ..backgroundColor = CustomColors.secundaryDarkerColor
+    // ..backgroundColor = CustomColors.secundaryDarkerColor.withValues(alpha: 0.3)
+    ..indicatorColor = CustomColors.primaryColor
+    ..textColor = CustomColors.witheColor
+    ..textStyle = const TextStyle(
+      fontWeight: FontWeight.bold,
+      color: CustomColors.witheColor,
+    )
+    ..maskColor = Colors.transparent
+    ..boxShadow = const [
+      BoxShadow(color: Colors.black12, offset: Offset(0, 3), blurRadius: 5.0),
+    ]
     ..userInteractions = false
     ..dismissOnTap = false
     ..customAnimation = CustomAnimation();

@@ -131,6 +131,7 @@ class AlarmPage extends GetView<AlarmController> {
       }).toList();
 
       return ListView(
+        primary: false,
         padding: EdgeInsets.zero,
         children: widgetList.isNotEmpty
             ? widgetList

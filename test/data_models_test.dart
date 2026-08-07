@@ -142,6 +142,35 @@ void main() {
     });
   });
 
+  group('EmployeeAbsenceDTO', () {
+    test('reads the live EmployeeAbsence contract', () {
+      final activity = EmployeeAbsenceDTO.fromJson({
+        'ID': 15,
+        'Employee': {'ID': 8, 'Name': 'Ana', 'ShortName': 'Dra. Ana'},
+        'Type': {
+          'ID': 3,
+          'Name': 'Formação',
+          'Code': 12,
+          'Description': 'Curso de actualização',
+          'Deleted': false,
+        },
+        'StartDate': '2026-08-07T08:00:00Z',
+        'EndDate': '2026-08-07T12:00:00Z',
+        'PeriodicAbsenceID': 4,
+        'Guid': 'activity-guid',
+      });
+
+      expect(activity.id, 15);
+      expect(activity.employee?.name, 'Ana');
+      expect(activity.type?.name, 'Formação');
+      expect(activity.type?.description, 'Curso de actualização');
+      expect(activity.startDate, DateTime.utc(2026, 8, 7, 8));
+      expect(activity.endDate, DateTime.utc(2026, 8, 7, 12));
+      expect(activity.periodicAbsenceID, 4);
+      expect(activity.guid, 'activity-guid');
+    });
+  });
+
   group('Alarm models', () {
     test('AlarmDTO keeps scheduling and notification flags', () {
       final alarm = AlarmDTO.fromJson({
