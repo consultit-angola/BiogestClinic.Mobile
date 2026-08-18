@@ -72,9 +72,32 @@ command, useful in a clone where the alias has not been configured, is:
 
 The command verifies that the branch exists on `origin` and dispatches the
 `release-android.yml` workflow. The workflow reads the exact version and build
-number from `pubspec.yaml`, runs analysis and tests, builds one signed APK for
-each configured clinic, generates release notes from the changes since the
-previous tag, and publishes the tag with all clinic APKs.
+number from `pubspec.yaml`, runs analysis and tests, and publishes or updates
+the release for that version. By default it builds only APKs not already
+attached to that release.
+
+To publish a single clinic, pass its exact configured name:
+
+```powershell
+git release-android main BomSenso
+```
+
+For `version: 1.1.5+1006`, that produces only
+`MyBio-BomSenso-v1.1.5.apk` in the `v1.1.5` release. A later
+`git release-android main` skips that APK and builds only clinics still missing
+from the same release. To intentionally rebuild and replace an existing APK,
+use `-Regenerate`:
+
+```powershell
+.\release.ps1 main BomSenso -Regenerate
+```
+
+To rebuild and replace every configured clinic APK in the current version's
+release, use:
+
+```powershell
+git release-android main -Regenerate
+```
 
 Configure these GitHub Actions secrets before the first release:
 

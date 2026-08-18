@@ -1,6 +1,9 @@
 param(
     [Parameter(Position = 0)]
-    [string]$Branch
+    [string]$Branch,
+    [Parameter(Position = 1)]
+    [string]$Clinic,
+    [switch]$Regenerate
 )
 
 $repositoryPath = $PSScriptRoot
@@ -54,7 +57,18 @@ if ($currentBranch -eq $Branch) {
 }
 
 Write-Host "Starting Android release from branch '$Branch' using the version from pubspec.yaml..."
-gh workflow run release-android.yml --repo consultit-angola/BiogestClinic.Mobile --ref $Branch
+$workflowArguments = @(
+    'workflow', 'run', 'release-android.yml',
+    '--repo', 'consultit-angola/BiogestClinic.Mobile',
+    '--ref', $Branch,
+    '-f', "regenerate=$($Regenerate.IsPresent.ToString().ToLowerInvariant())"
+)
+
+if (-not [string]::IsNullOrWhiteSpace($Clinic)) {
+    $workflowArguments += @('-f', "clinic=$Clinic")
+}
+
+& gh @workflowArguments
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error 'GitHub did not accept the release workflow request.'

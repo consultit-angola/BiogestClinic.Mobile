@@ -2,6 +2,16 @@ name: Publish Android release
 
 on:
   workflow_dispatch:
+    inputs:
+      clinic:
+        description: Optional exact clinic name to build
+        required: false
+        type: string
+      regenerate:
+        description: Rebuild and replace APKs that are already attached to this version
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -47,14 +57,20 @@ jobs:
           build="${BASH_REMATCH[4]}"
           tag="v$version"
 
+          tag_exists=false
           if git rev-parse "$tag" >/dev/null 2>&1; then
-            echo "Tag $tag already exists." >&2
-            exit 1
+            tag_commit=$(git rev-list -n 1 "$tag")
+            if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+              echo "Tag $tag belongs to a different commit." >&2
+              exit 1
+            fi
+            tag_exists=true
           fi
 
           echo "name=$version" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "tag_exists=$tag_exists" >> "$GITHUB_OUTPUT"
 
       - name: Restore Android signing key
         shell: bash
@@ -86,30 +102,81 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build signed APKs
+      - name: Select APKs to build
+        id: clinics
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLINIC: ${{ inputs.clinic }}
+          REGENERATE: ${{ inputs.regenerate }}
+          TAG: ${{ steps.version.outputs.tag }}
+          TAG_EXISTS: ${{ steps.version.outputs.tag_exists }}
         run: |
-          mkdir -p release
-          mapfile -t clinics < <(jq -er '.clinics[] | select(type == "string" and length > 0)' config/clinics.json)
-          if [[ ${#clinics[@]} -eq 0 ]]; then
+          mapfile -t configured_clinics < <(jq -er '.clinics[] | select(type == "string" and length > 0)' config/clinics.json)
+          if [[ ${#configured_clinics[@]} -eq 0 ]]; then
             echo "No clinics are configured in config/clinics.json." >&2
             exit 1
           fi
-          for clinic in "${clinics[@]}"; do
+
+          if [[ -n "$CLINIC" ]]; then
+            if ! printf '%s\n' "${configured_clinics[@]}" | grep -Fxq "$CLINIC"; then
+              echo "Clinic '$CLINIC' is not configured." >&2
+              exit 1
+            fi
+            selected_clinics=("$CLINIC")
+          else
+            selected_clinics=("${configured_clinics[@]}")
+          fi
+
+          existing_assets='[]'
+          if [[ "$TAG_EXISTS" == "true" ]]; then
+            existing_assets=$(gh release view "$TAG" --json assets --jq '[.assets[].name]')
+          fi
+
+          : > selected-clinics.txt
+          for clinic in "${selected_clinics[@]}"; do
+            asset="MyBio-$clinic-$TAG.apk"
+            if [[ "$REGENERATE" != "true" ]] && jq -e --arg asset "$asset" 'index($asset) != null' <<< "$existing_assets" >/dev/null; then
+              echo "Skipping existing asset: $asset"
+              continue
+            fi
+            printf '%s\n' "$clinic" >> selected-clinics.txt
+          done
+
+          echo "count=$(wc -l < selected-clinics.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Build selected signed APKs
+        if: steps.clinics.outputs.count != '0'
+        shell: bash
+        run: |
+          mkdir -p release
+          while IFS= read -r clinic; do
             flutter build apk --release \
               --build-name=${{ steps.version.outputs.name }} \
               --build-number=${{ steps.version.outputs.build }} \
               --dart-define=CLINIC_CODE="$clinic"
             cp build/app/outputs/flutter-apk/app-release.apk \
               "release/MyBio-$clinic-${{ steps.version.outputs.tag }}.apk"
-          done
+          done < selected-clinics.txt
 
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          name: MyBio ${{ steps.version.outputs.name }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: release/*.apk
+      - name: Publish or update GitHub release
+        if: steps.clinics.outputs.count != '0'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_NAME: MyBio ${{ steps.version.outputs.name }}
+          TAG_EXISTS: ${{ steps.version.outputs.tag_exists }}
+        run: |
+          if [[ "$TAG_EXISTS" != "true" ]]; then
+            gh release create "$TAG" release/*.apk \
+              --target "$GITHUB_SHA" \
+              --title "$RELEASE_NAME" \
+              --generate-notes
+          else
+            gh release upload "$TAG" release/*.apk --clobber
+          fi
+
+      - name: Report unchanged release
+        if: steps.clinics.outputs.count == '0'
+        run: echo "All requested APKs are already attached to ${{ steps.version.outputs.tag }}."
