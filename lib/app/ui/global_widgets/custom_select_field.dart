@@ -35,62 +35,58 @@ class CustomSingleSelectField extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: searchable
-                ? InkWell(
-                    onTap: () async {
-                      final result = await showCustomSingleSelectDialog(
-                        context: context,
-                        title: label,
-                        options: options,
-                        selectedID: value,
-                        emptyOptionText: emptyOptionText,
-                      );
-                      if (result != null) {
-                        onChanged(result == 0 ? null : result);
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: label,
-                        border: const OutlineInputBorder(),
-                        suffixIcon: const Icon(Icons.arrow_drop_down),
-                      ),
-                      child: Text(
-                        selected?.name ?? emptyText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  )
-                : DropdownButtonFormField<int>(
-                    initialValue: selected?.id,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: label,
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
-                      DropdownMenuItem<int>(
-                        value: null,
-                        child: Text(emptyText),
-                      ),
-                      ...options.map(
-                        (option) => DropdownMenuItem<int>(
-                          value: option.id,
-                          child: Text(
-                            option.name,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                    onChanged: onChanged,
-                  ),
+            child: InkWell(
+              onTap: () async {
+                final result = await showCustomSingleSelectDialog(
+                  context: context,
+                  title: label,
+                  options: options,
+                  selectedID: value,
+                  searchable: searchable,
+                );
+                if (result != null) {
+                  onChanged(result);
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: label,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _suffixIcon(onClear: () => onChanged(null)),
+                ),
+                child: Text(
+                  selected?.name ?? emptyText,
+                  style: selected == null
+                      ? Theme.of(context).inputDecorationTheme.hintStyle
+                      : null,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 4),
           CustomRefreshButton(loading: loading, onRefresh: onRefresh),
         ],
       ),
+    );
+  }
+
+  Widget _suffixIcon({VoidCallback? onClear}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.arrow_drop_down),
+        _clearIcon(onClear: onClear),
+      ],
+    );
+  }
+
+  Widget _clearIcon({VoidCallback? onClear}) {
+    return IconButton(
+      tooltip: 'Limpar selecao',
+      onPressed: onClear,
+      icon: const Icon(Icons.clear),
     );
   }
 }
@@ -103,6 +99,7 @@ class CustomMultiSelectField extends StatelessWidget {
   final bool loading;
   final Future<void> Function() onRefresh;
   final Future<List<CalendarFilterOptionDTO>> Function(String)? onRemoteSearch;
+  final VoidCallback? onClear;
   final String? emptyOptionText;
 
   const CustomMultiSelectField({
@@ -114,6 +111,7 @@ class CustomMultiSelectField extends StatelessWidget {
     required this.loading,
     required this.onRefresh,
     this.onRemoteSearch,
+    this.onClear,
     this.emptyOptionText,
   });
 
@@ -149,7 +147,17 @@ class CustomMultiSelectField extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: label,
                   border: const OutlineInputBorder(),
-                  suffixIcon: const Icon(Icons.arrow_drop_down),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_drop_down),
+                      IconButton(
+                        tooltip: 'Limpar selecao',
+                        onPressed: onClear ?? () => onChanged({}),
+                        icon: const Icon(Icons.clear),
+                      ),
+                    ],
+                  ),
                 ),
                 child: Text(
                   selectedText,

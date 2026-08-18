@@ -136,9 +136,9 @@ class CalendarPage extends GetView<CalendarController> {
                             options: controller.employees,
                             selectedIDs: employeeIDs,
                             loading: controller.loadingEmployees,
-                            onRemoteSearch: (name) async {
-                              await controller.searchEmployees(name);
-                              return controller.employees;
+                            onClear: () {
+                              controller.clearEmployeeSearch();
+                              setModalState(() => employeeIDs = {});
                             },
                             onRefresh: () async {
                               final reload = controller.reloadEmployees();
@@ -343,7 +343,7 @@ class CalendarPage extends GetView<CalendarController> {
                                 showCanceledValue: showCanceled,
                               );
                             },
-                            icon: const Icon(Icons.search),
+                            icon: const Icon(Icons.check),
                             label: const Text('Aplicar filtros'),
                           ),
                         ),

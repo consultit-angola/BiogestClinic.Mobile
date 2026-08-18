@@ -67,20 +67,42 @@ class Provider {
     }
   }
 
-  Future<Map<String, dynamic>> getEmployees({required String name}) {
-    return _getCalendarFilterOptions(
-      'Employee',
-      queryParameters: {
-        'withDeleted': 'false',
-        'operationCode': '190',
-        'name': name,
-      },
-      itemFilter: (employee) {
-        final specialties =
-            employee['AllowedAppointmentExecutionSpecialties'] as List?;
-        return specialties?.isNotEmpty == true;
-      },
-    );
+  Future<Map<String, dynamic>> searchEmployees({String? name}) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Employee/Search');
+      final search = name?.trim();
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode({
+          'WithDeleted': false,
+          // 'OperationCode': 190,
+          if (search?.isNotEmpty == true) 'Name': search,
+        }),
+      );
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as List;
+        final employees = data
+            .cast<Map<String, dynamic>>()
+            .where((employee) {
+              final specialties =
+                  employee['AllowedAppointmentExecutionSpecialties'] as List?;
+              return specialties?.isNotEmpty == true;
+            })
+            .map(CalendarFilterOptionDTO.fromJson)
+            .where((option) => option.id > 0 && option.name.isNotEmpty)
+            .toList();
+        return {'ok': true, 'data': employees};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <CalendarFilterOptionDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
   }
 
   Future<Map<String, dynamic>> getCalendarStores() {

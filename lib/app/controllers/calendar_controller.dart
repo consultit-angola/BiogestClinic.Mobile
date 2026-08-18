@@ -85,6 +85,10 @@ class CalendarController extends GetxController {
     results.add(await reloadStates(showError: showErrors));
     onLoading?.call('Carregando especialidades...');
     results.add(await reloadMedicalSpecialties(showError: showErrors));
+    if (canViewOtherUsersAppointments) {
+      onLoading?.call('Carregando medicos...');
+      results.add(await reloadEmployees(showError: showErrors));
+    }
     filterOptionsLoaded = results.every((loaded) => loaded);
     update();
     return filterOptionsLoaded;
@@ -92,26 +96,26 @@ class CalendarController extends GetxController {
 
   Future<bool> searchEmployees(String name, {bool showError = true}) async {
     final search = name.trim();
-    if (search.length < 3) return false;
     _lastEmployeeSearch = search;
     return _reloadOptions(
       key: 'employees',
-      request: () => _provider.getEmployees(name: search),
+      request: () => _provider.searchEmployees(name: search),
       onLoaded: (options) => employees = _mergeOptions(employees, options),
       showError: showError,
     );
   }
 
   Future<bool> reloadEmployees({bool showError = true}) async {
-    final search = _lastEmployeeSearch;
-    if (search == null) {
-      Get.snackbar(
-        'Pesquisa',
-        'Introduza pelo menos 3 letras do nome do médico.',
-      );
-      return false;
-    }
-    return searchEmployees(search, showError: showError);
+    return _reloadOptions(
+      key: 'employees',
+      request: () => _provider.searchEmployees(name: _lastEmployeeSearch),
+      onLoaded: (options) => employees = _mergeOptions(employees, options),
+      showError: showError,
+    );
+  }
+
+  void clearEmployeeSearch() {
+    _lastEmployeeSearch = null;
   }
 
   Future<bool> reloadStores({bool showError = true}) => _reloadOptions(

@@ -9,7 +9,7 @@ Future<int?> showCustomSingleSelectDialog({
   required String title,
   required List<CalendarFilterOptionDTO> options,
   required int? selectedID,
-  String? emptyOptionText,
+  bool searchable = true,
 }) {
   var search = '';
   return showDialog<int>(
@@ -29,30 +29,21 @@ Future<int?> showCustomSingleSelectDialog({
             height: MediaQuery.sizeOf(context).height * 0.55,
             child: Column(
               children: [
-                TextField(
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Pesquisar',
-                    prefixIcon: Icon(Icons.search),
+                if (searchable) ...[
+                  TextField(
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Pesquisar',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) => setDialogState(() => search = value),
                   ),
-                  onChanged: (value) => setDialogState(() => search = value),
-                ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                ],
                 Expanded(
                   child: ListView(
                     primary: false,
                     children: [
-                      ListTile(
-                        leading: Icon(
-                          selectedID == null
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                        ),
-                        title: Text(
-                          emptyOptionText ?? 'Todos os ${title.toLowerCase()}',
-                        ),
-                        onTap: () => Navigator.pop(dialogContext, 0),
-                      ),
                       ...visibleOptions.map(
                         (option) => ListTile(
                           leading: Icon(
