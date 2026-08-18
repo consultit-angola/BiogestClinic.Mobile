@@ -1,7 +1,21 @@
-import 'package:biogest_clinic_mobile/app/services/app_update_service.dart';
+import 'package:biogest_clinic_mobile/app/data/services/app_update_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('AppUpdateService.isClinicApk', () {
+    test('accepts only the APK for the compiled clinic', () {
+      expect(
+        AppUpdateService.isClinicApk('MyBio-Zule-v1.2.0.apk', 'Zule'),
+        isTrue,
+      );
+      expect(
+        AppUpdateService.isClinicApk('MyBio-HPLS-v1.2.0.apk', 'Zule'),
+        isFalse,
+      );
+      expect(AppUpdateService.isClinicApk('MyBio-v1.2.0.apk', 'Zule'), isFalse);
+    });
+  });
+
   group('AppUpdateService.isNewerVersion', () {
     test('accepts a newer release tag', () {
       expect(AppUpdateService.isNewerVersion('v1.1.0', '1.0.9'), isTrue);

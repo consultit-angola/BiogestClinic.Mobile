@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -13,8 +12,8 @@ import 'app/ui/index.dart';
 void main() async {
   final prefs = Preferences();
   WidgetsFlutterBinding.ensureInitialized();
+  await ApiConfig.initialize();
   await prefs.initPrefs();
-  await dotenv.load(fileName: ".env");
 
   Get.put(GlobalController());
   Get.put(AppUpdateController());
@@ -33,6 +32,8 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
+  String? _activeRoute;
+
   @override
   Widget build(BuildContext context) {
     configLoading();
@@ -47,8 +48,37 @@ class _MainAppState extends State<MainApp> {
           title: 'MyBio',
           getPages: AppPages.pages,
           initialRoute: Routes.appUpdate,
+          routingCallback: (routing) {
+            final route = routing?.current;
+            if (route == null ||
+                routing?.isBottomSheet == true ||
+                routing?.isDialog == true ||
+                route == _activeRoute) {
+              return;
+            }
+            _activeRoute = route;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              GlobalController.to.refreshPage(route);
+            });
+          },
           scrollBehavior: const AppScrollBehavior(),
-          builder: EasyLoading.init(),
+          builder: (context, child) {
+            final content = EasyLoading.init()(context, child);
+            return Obx(
+              () => Stack(
+                children: [
+                  content,
+                  if (GlobalController.to.pageRefreshing.value)
+                    Positioned(
+                      top: 105,
+                      left: 0,
+                      right: 0,
+                      child: Center(child: RefreshProgressIndicator()),
+                    ),
+                ],
+              ),
+            );
+          },
           theme: ThemeData(
             textSelectionTheme: TextSelectionThemeData(
               cursorColor: CustomColors.primaryLightColor,
@@ -97,7 +127,6 @@ void configLoading() {
     ..radius = 10.0
     ..progressColor = CustomColors.primaryColor
     ..backgroundColor = CustomColors.secundaryDarkerColor
-    // ..backgroundColor = CustomColors.secundaryDarkerColor.withValues(alpha: 0.3)
     ..indicatorColor = CustomColors.primaryColor
     ..textColor = CustomColors.witheColor
     ..textStyle = const TextStyle(

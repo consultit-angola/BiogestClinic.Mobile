@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../controllers/global_controller.dart';
+import 'admin_middleware.dart';
 import 'app_routes.dart';
 import 'calendar_permission_middleware.dart';
 import 'permission_middleware.dart';
@@ -57,7 +58,11 @@ abstract class AppPages {
       page: () => const UserPage(),
       binding: UserBinding(),
     ),
-    GetPage(name: Routes.apiSettings, page: () => const ApiSettingsPage()),
+    GetPage(
+      name: Routes.apiSettings,
+      page: () => const ApiSettingsPage(),
+      middlewares: [AdminMiddleware()],
+    ),
     GetPage(
       name: Routes.dashboard,
       page: () => const DashboardPage(),

@@ -6,6 +6,8 @@ import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../shared/api_config.dart';
+
 class AppRelease {
   const AppRelease({
     required this.version,
@@ -56,7 +58,8 @@ class AppUpdateService {
       final asset = item as Map<String, dynamic>;
       final name = asset['name']?.toString() ?? '';
       final downloadUrl = asset['browser_download_url']?.toString() ?? '';
-      if (name.toLowerCase().endsWith('.apk') && downloadUrl.isNotEmpty) {
+      if (isClinicApk(name, ApiConfig.defaultApiName) &&
+          downloadUrl.isNotEmpty) {
         return AppRelease(
           version: _cleanVersion(tagName),
           currentVersion: packageInfo.version,
@@ -148,6 +151,14 @@ class AppUpdateService {
     }
 
     return false;
+  }
+
+  static bool isClinicApk(String assetName, String clinicCode) {
+    final escapedClinic = RegExp.escape(clinicCode.trim());
+    return RegExp(
+      '^MyBio-$escapedClinic-v.+\\.apk\$',
+      caseSensitive: false,
+    ).hasMatch(assetName.trim());
   }
 
   static String formatReleaseNotes(String notes) {

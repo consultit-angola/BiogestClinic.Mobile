@@ -43,6 +43,7 @@ class GlobalController extends GetxController {
   var pendingCalendar = 0.obs;
   var pendingAlarms = 0.obs;
   var pendingActivities = 0.obs;
+  final pageRefreshing = false.obs;
 
   var isCalendarControllerLoaded = false;
   var isChatControllerLoaded = false;
@@ -51,6 +52,7 @@ class GlobalController extends GetxController {
   Timer? timerAppts;
   bool _handlingExpiredSession = false;
   bool _timersStoppedByConnection = false;
+  int _pageRefreshCount = 0;
 
   bool hasPermission(int permission) {
     return activePermissions.contains(permission);
@@ -169,6 +171,80 @@ class GlobalController extends GetxController {
       if (canAccessAlarms) getProgrammedAlarms(),
       if (canAccessAppointmentCalendar) startApptsTimer(),
     ]);
+  }
+
+  Future<void> refreshPage(String route) async {
+    if (!isAuthenticated.value) return;
+
+    switch (route) {
+      case Routes.home:
+        if (Get.isRegistered<HomeController>()) {
+          await _runPageRefresh(HomeController.to.loadToday);
+        }
+        break;
+      case Routes.calendar:
+        if (Get.isRegistered<CalendarController>()) {
+          await _runPageRefresh(CalendarController.to.refreshAppointments);
+        }
+        break;
+      case Routes.activities:
+        if (Get.isRegistered<ActivitiesController>()) {
+          await _runPageRefresh(ActivitiesController.to.loadActivities);
+        }
+        break;
+      case Routes.chat:
+        if (Get.isRegistered<ChatController>()) {
+          await _runPageRefresh(
+            () => Future.wait([
+              ChatController.to.getUsers(
+                forceReload: true,
+                showLoading: false,
+              ),
+              getMessages(onlyUnread: false),
+              getMessages(),
+            ]),
+          );
+        }
+        break;
+      case Routes.chatDetails:
+        await _runPageRefresh(
+          () => Future.wait([getMessages(onlyUnread: false), getMessages()]),
+        );
+        break;
+      case Routes.alarm:
+        if (Get.isRegistered<AlarmController>()) {
+          await _runPageRefresh(getProgrammedAlarms);
+        }
+        break;
+      case Routes.user:
+        if (Get.isRegistered<UserController>()) {
+          await _runPageRefresh(UserController.to.loadStores);
+        }
+        break;
+      case Routes.dashboard:
+        if (Get.isRegistered<DashboardController>()) {
+          final controller = Get.find<DashboardController>();
+          await _runPageRefresh(
+            () => Future.wait([
+              controller.load(controller.period.value),
+              controller.loadClientStatistics(),
+              controller.loadRealTimeStatistics(),
+            ]),
+          );
+        }
+        break;
+    }
+  }
+
+  Future<void> _runPageRefresh(Future<void> Function() refresh) async {
+    _pageRefreshCount++;
+    pageRefreshing.value = true;
+    try {
+      await refresh();
+    } finally {
+      _pageRefreshCount--;
+      pageRefreshing.value = _pageRefreshCount > 0;
+    }
   }
 
   Future<void> startChatTimer() async {

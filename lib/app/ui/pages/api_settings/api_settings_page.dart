@@ -23,6 +23,11 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
   }
 
   Future<void> _saveApiSelection() async {
+    if (GlobalController.to.authenticatedUser.value?.id != 1) {
+      Get.offAllNamed(Routes.home);
+      return;
+    }
+
     final previousApiName = ApiConfig.activeApiName;
     if (_selectedApiName == previousApiName) {
       Get.snackbar('Informação', 'A API selecionada já está ativa');

@@ -59,65 +59,54 @@ Android production releases are built from the remote `main` branch and
 published by GitHub Actions. From a clean repository, use the Git alias:
 
 ```powershell
-# Production patch release from main
-git release-android main patch
+# Production release from main
+git release-android main
 ```
 
 The alias calls the tracked PowerShell launcher internally. The equivalent
 command, useful in a clone where the alias has not been configured, is:
 
 ```powershell
-.\release.ps1 main patch
+.\release.ps1 main
 ```
 
 The command verifies that the branch exists on `origin` and dispatches the
-`release-android.yml` workflow. The workflow calculates the next version, runs
-analysis and tests, builds a signed APK, generates release notes from the
-changes since the previous tag, and publishes both the tag and APK.
+`release-android.yml` workflow. The workflow reads the exact version and build
+number from `pubspec.yaml`, runs analysis and tests, builds one signed APK for
+each configured clinic, generates release notes from the changes since the
+previous tag, and publishes the tag with all clinic APKs.
 
 Configure these GitHub Actions secrets before the first release:
 
-- `BIOGEST_ENV`
 - `BIOGEST_ANDROID_KEYSTORE_BASE64`
 - `BIOGEST_ANDROID_KEY_ALIAS`
 - `BIOGEST_ANDROID_KEY_PASSWORD`
 - `BIOGEST_ANDROID_STORE_PASSWORD`
 
-#### Choosing the version increment
+#### Choosing the release version
 
-The application follows semantic versioning in the `MAJOR.MINOR.PATCH` format.
-Choose the increment according to the scope of the release:
+Before dispatching the release, update `pubspec.yaml` using the
+`MAJOR.MINOR.PATCH+BUILD` format. For example:
 
-- `patch` is for bug fixes, stability improvements, and small internal changes
-  that do not add or break functionality. For example, `1.0.2` becomes `1.0.3`.
-- `minor` is for new backward-compatible features or visible improvements. For
-  example, `1.0.2` becomes `1.1.0`.
-- `major` is for large or incompatible changes that significantly alter the
-  application or its contracts. For example, `1.0.2` becomes `2.0.0`.
-
-Production examples:
-
-```powershell
-# Bug fixes: 1.0.2 -> 1.0.3
-git release-android main patch
-
-# New compatible features: 1.0.2 -> 1.1.0
-git release-android main minor
-
-# Large or incompatible changes: 1.0.2 -> 2.0.0
-git release-android main major
+```yaml
+version: 1.1.4+6
 ```
+
+This produces version name `1.1.4`, Android build number `6`, tag `v1.1.4`,
+release title `MyBio 1.1.4`, and APKs such as `MyBio-Zule-v1.1.4.apk`. Both the
+semantic version and build number must be increased manually when Android
+requires a newer release. The clinic list and public API base URL are defined
+once in `config/clinics.json`. The workflow reads that array, each APK receives
+its clinic through `--dart-define`, and it only downloads future updates
+matching that clinic.
 
 Do not publish a normal GitHub Release from `test` or a development branch.
 The mobile application checks the latest published release globally, so clients
 could receive a build that has not passed through `main`.
 
-When in doubt, use `patch` for corrections, `minor` for new functionality, and
-reserve `major` for intentional compatibility breaks. The APK version is
-overridden during the release build; the workflow does not modify the selected
-source branch. New versions are calculated from the newest semantic version tag
-or `pubspec.yaml`, whichever is higher. Its internal build number is generated
-from the GitHub Actions run number so Android always receives a newer build.
+The workflow does not calculate, increment, or modify the version in the
+selected source branch. It fails if the tag declared by `pubspec.yaml` already
+exists.
 
 Android requires the `REQUEST_INSTALL_PACKAGES` permission, which is already
 declared in `android/app/src/main/AndroidManifest.xml`. Depending on the Android

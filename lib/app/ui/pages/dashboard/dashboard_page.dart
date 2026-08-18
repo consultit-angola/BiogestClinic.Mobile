@@ -10,12 +10,6 @@ import '../../index.dart';
 class DashboardPage extends GetView<DashboardController> {
   const DashboardPage({super.key});
 
-  static const gray = Color(0xff595854);
-  static const yellow = Color(0xffF6C915);
-  static const green = Color(0xff3AAF82);
-  static const blue = Color(0xff0292B7);
-  static const red = Color(0xffD64F4F);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,14 +41,7 @@ class DashboardPage extends GetView<DashboardController> {
                     const SizedBox(height: 12),
                     _periodSelector(),
                     const SizedBox(height: 18),
-                    if (controller.loading.value)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (controller.data.isEmpty)
+                    if (controller.data.isEmpty)
                       _empty()
                     else
                       ..._dashboardSections(),
@@ -110,7 +97,7 @@ class DashboardPage extends GetView<DashboardController> {
         controller.nestedInt('ClientTotal', 'NewClientsCount'),
         controller.nestedInt('ClientTotal', 'RegularClientsCount'),
       ],
-      const [gray, yellow],
+      const [CustomColors.dashBoardGray, CustomColors.dashBoardYellow],
     ),
     const SizedBox(height: 14),
     _pieCard(
@@ -120,7 +107,7 @@ class DashboardPage extends GetView<DashboardController> {
         controller.nestedInt('FinancialTotal', 'BilledCount'),
         controller.nestedInt('FinancialTotal', 'UnbilledCount'),
       ],
-      const [green, blue],
+      const [CustomColors.dashBoardGreen, CustomColors.dashBoardBlue],
     ),
     const SizedBox(height: 14),
     _specialtyChart(),
@@ -310,7 +297,7 @@ class DashboardPage extends GetView<DashboardController> {
 
   Widget _specialtyChart() {
     const chart = 'Consultas por especialidade';
-    final items = controller.items('DashboardAppointmentBySpeciality')
+    final items = [...controller.items('DashboardAppointmentBySpeciality')]
       ..sort(
         (a, b) => ((a['ID'] as num?) ?? 0).compareTo((b['ID'] as num?) ?? 0),
       );
@@ -325,10 +312,10 @@ class DashboardPage extends GetView<DashboardController> {
             spacing: 10,
             runSpacing: 5,
             children: [
-              _legend(chart, 'Marcadas', yellow),
-              _legend(chart, 'Em execução', blue),
-              _legend(chart, 'Concluídas', green),
-              _legend(chart, 'Canceladas', red),
+              _legend(chart, 'Marcadas', CustomColors.dashBoardYellow),
+              _legend(chart, 'Em execução', CustomColors.dashBoardBlue),
+              _legend(chart, 'Concluídas', CustomColors.dashBoardGreen),
+              _legend(chart, 'Canceladas', CustomColors.dashBoardRed),
             ],
           ),
           const SizedBox(height: 12),
@@ -387,22 +374,34 @@ class DashboardPage extends GetView<DashboardController> {
                       barsSpace: 2,
                       barRods: [
                         if (controller.isChartSeriesVisible(chart, 'Marcadas'))
-                          _rod(item['ScheduledCount'], yellow),
+                          _rod(
+                            item['ScheduledCount'],
+                            CustomColors.dashBoardYellow,
+                          ),
                         if (controller.isChartSeriesVisible(
                           chart,
                           'Em execução',
                         ))
-                          _rod(item['InExecutionCount'], blue),
+                          _rod(
+                            item['InExecutionCount'],
+                            CustomColors.dashBoardBlue,
+                          ),
                         if (controller.isChartSeriesVisible(
                           chart,
                           'Concluídas',
                         ))
-                          _rod(item['FinishedCount'], green),
+                          _rod(
+                            item['FinishedCount'],
+                            CustomColors.dashBoardGreen,
+                          ),
                         if (controller.isChartSeriesVisible(
                           chart,
                           'Canceladas',
                         ))
-                          _rod(item['CanceledCount'], red),
+                          _rod(
+                            item['CanceledCount'],
+                            CustomColors.dashBoardRed,
+                          ),
                       ],
                     );
                   }),
@@ -442,9 +441,9 @@ class DashboardPage extends GetView<DashboardController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _legend(chart, 'Novos', gray),
+              _legend(chart, 'Novos', CustomColors.dashBoardGray),
               const SizedBox(width: 14),
-              _legend(chart, 'Recorrentes', yellow),
+              _legend(chart, 'Recorrentes', CustomColors.dashBoardYellow),
             ],
           ),
           const SizedBox(height: 12),
@@ -494,9 +493,9 @@ class DashboardPage extends GetView<DashboardController> {
                 ),
                 lineBarsData: [
                   if (controller.isChartSeriesVisible(chart, 'Novos'))
-                    _line(newClients, gray),
+                    _line(newClients, CustomColors.dashBoardGray),
                   if (controller.isChartSeriesVisible(chart, 'Recorrentes'))
-                    _line(regularClients, yellow),
+                    _line(regularClients, CustomColors.dashBoardYellow),
                 ],
               ),
             ),

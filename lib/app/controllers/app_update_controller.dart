@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 import '../data/shared/preferences.dart';
 import '../routes/app_routes.dart';
-import '../services/app_update_service.dart';
+import '../data/services/app_update_service.dart';
 
 enum AppUpdateStatus { checking, available, downloading, downloaded, error }
 

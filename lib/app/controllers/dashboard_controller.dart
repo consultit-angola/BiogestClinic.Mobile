@@ -19,9 +19,6 @@ class DashboardController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    load('month');
-    loadClientStatistics();
-    loadRealTimeStatistics();
     realTimeTimer = Timer.periodic(
       const Duration(minutes: 5),
       (_) => loadRealTimeStatistics(showError: false),

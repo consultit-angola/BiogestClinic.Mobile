@@ -23,12 +23,6 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Restore environment configuration
-        shell: bash
-        env:
-          APP_ENV: ${{ secrets.BIOGEST_ENV }}
-        run: printf '%s' "$APP_ENV" > .env
-
       - name: Install dependencies
         run: flutter pub get
 

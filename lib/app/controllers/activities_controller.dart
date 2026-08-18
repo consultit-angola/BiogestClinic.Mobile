@@ -23,7 +23,7 @@ class ActivitiesController extends GetxController {
   void onInit() {
     super.onInit();
     final now = DateTime.now();
-    onMonthChanged(DateTime(now.year, now.month));
+    _setMonth(DateTime(now.year, now.month));
   }
 
   void onMonthChanged(DateTime month) {
@@ -31,10 +31,14 @@ class ActivitiesController extends GetxController {
     if (_selectedMonth == selectedMonth) {
       return;
     }
-    _selectedMonth = selectedMonth;
+    _setMonth(month);
+    loadActivities(showMonthLoading: true);
+  }
+
+  void _setMonth(DateTime month) {
+    _selectedMonth = '${month.year}-${month.month}';
     _rangeStartDate = DateTime.utc(month.year, month.month, 1);
     _rangeEndDate = DateTime.utc(month.year, month.month + 1, 0, 23, 59, 59);
-    loadActivities(showMonthLoading: true);
   }
 
   Future<void> loadActivities({bool showMonthLoading = false}) async {

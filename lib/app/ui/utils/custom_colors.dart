@@ -19,4 +19,10 @@ class CustomColors {
   static const Color mutedTextColor = Color(0xff667780);
   static const Color borderColor = Color(0xffDCE5E7);
   static const Color warningColor = Color(0xffD79024);
+  // Dashboard colors
+  static const Color dashBoardGray = Color(0xff595854);
+  static const Color dashBoardYellow = Color(0xffF6C915);
+  static const Color dashBoardGreen = Color(0xff3AAF82);
+  static const Color dashBoardBlue = Color(0xff0292B7);
+  static const Color dashBoardRed = Color(0xffD64F4F);
 }

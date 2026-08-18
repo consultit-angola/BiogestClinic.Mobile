@@ -1,10 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [string]$Branch,
-
-    [Parameter(Position = 1)]
-    [ValidateSet('patch', 'minor', 'major')]
-    [string]$Bump = 'patch'
+    [string]$Branch
 )
 
 $repositoryPath = $PSScriptRoot
@@ -57,8 +53,8 @@ if ($currentBranch -eq $Branch) {
     }
 }
 
-Write-Host "Starting Android release from branch '$Branch' with '$Bump' increment..."
-gh workflow run release-android.yml --repo consultit-angola/BiogestClinic.Mobile --ref $Branch -f "bump=$Bump"
+Write-Host "Starting Android release from branch '$Branch' using the version from pubspec.yaml..."
+gh workflow run release-android.yml --repo consultit-angola/BiogestClinic.Mobile --ref $Branch
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error 'GitHub did not accept the release workflow request.'

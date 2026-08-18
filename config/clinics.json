@@ -1,0 +1,31 @@
+{
+  "apiBaseUrl": "https://biogestclinic.consultit-angola.com/Biogest.WebAPI",
+  "clinics": [
+    "Afrodente",
+    "Ausmed",
+    "Belodente",
+    "BomSenso",
+    "ClinicaMaster",
+    "Demo",
+    "DentalCenter",
+    "FisioHealth",
+    "FisioLuanda",
+    "Freefarma",
+    "Gav",
+    "GolDente",
+    "Healthtek",
+    "HPLS",
+    "Immunize",
+    "Junic",
+    "Magnus",
+    "Makarismo",
+    "OralClinic",
+    "Publish",
+    "Raizes",
+    "SmileDente",
+    "Test",
+    "TestFE",
+    "Vitrea",
+    "Zule"
+  ]
+}

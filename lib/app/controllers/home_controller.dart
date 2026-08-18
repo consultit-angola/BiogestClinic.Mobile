@@ -13,12 +13,6 @@ class HomeController extends GetxController {
   final RxList<AppointmentDTO> todayAppointments = <AppointmentDTO>[].obs;
   final RxBool loading = false.obs;
 
-  @override
-  void onReady() {
-    super.onReady();
-    loadToday();
-  }
-
   Future<void> loadToday() async {
     if (!globalController.canAccessAppointmentCalendar ||
         globalController.authenticatedEmployee.value == null) {

@@ -1,124 +1,86 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 
 import 'preferences.dart';
 
 class ApiConfig {
-  static const String defaultApiName = 'Demo';
-  static const List<String> predefinedApiNames = [
-    'Afrodente',
-    'Ausmed',
-    'Belodente',
-    'BomSenso',
-    'ClinicaMaster',
-    'Demo',
-    'DentalCenter',
-    'FisioHealth',
-    'FisioLuanda',
-    'Freefarma',
-    'Gav',
-    'GolDente',
-    'Healthtek',
-    'HPLS',
-    'Immunize',
-    'Junic',
-    'Magnus',
-    'Makarismo',
-    'OralClinic',
-    'Publish',
-    'Raizes',
-    'SmileDente',
-    'Test',
-    'TestFE',
-    'Vitrea',
-    'Zule',
-  ];
-  static const String fallbackBaseUrl =
-      'https://biogestclinic.consultit-angola.com/Biogest.WebAPI';
+  static const String defaultApiName = String.fromEnvironment(
+    'CLINIC_CODE',
+    defaultValue: 'Demo',
+  );
 
   static final Preferences _preferences = Preferences();
+  static String _fallbackBaseUrl = '';
+  static List<String> _predefinedApiNames = const [];
 
-  static String get defaultApiUrl {
-    final configuredUrl = _normalizeUrl(dotenv.env['API_URL'] ?? '');
-    final pattern = RegExp(
-      r'^(https?://.+?/Biogest\.WebAPI\.)([^/]+)(/api/?$)',
-    );
-    final match = pattern.firstMatch(configuredUrl);
-    if (match != null) {
-      return '${match.group(1)}$defaultApiName${match.group(3)}';
+  static String get fallbackBaseUrl => _fallbackBaseUrl;
+
+  static List<String> get predefinedApiNames => _predefinedApiNames;
+
+  static Future<void> initialize({String? configJson}) async {
+    final source =
+        configJson ?? await rootBundle.loadString('config/clinics.json');
+    final config = jsonDecode(source) as Map<String, dynamic>;
+    final baseUrl = config['apiBaseUrl']?.toString().trim() ?? '';
+    final clinics = (config['clinics'] as List<dynamic>? ?? const [])
+        .map((clinic) => clinic.toString().trim())
+        .where((clinic) => clinic.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (baseUrl.isEmpty || clinics.isEmpty) {
+      throw const FormatException('Invalid clinic configuration.');
     }
-    return '$fallbackBaseUrl.$defaultApiName/api';
+    if (!clinics.any(
+      (clinic) => clinic.toLowerCase() == defaultApiName.toLowerCase(),
+    )) {
+      throw FormatException(
+        'Compiled clinic $defaultApiName is not configured.',
+      );
+    }
+
+    _fallbackBaseUrl = baseUrl;
+    _predefinedApiNames = clinics;
   }
+
+  static String get defaultApiUrl =>
+      '$fallbackBaseUrl.${_normalizeName(defaultApiName)}/api';
 
   static String get activeApiUrl {
     final storedUrl = _normalizeUrl(_preferences.apiUrl);
-    if (storedUrl.isNotEmpty) {
-      final pattern = RegExp(
-        r'^(https?://.+?/Biogest\.WebAPI\.)([^/]+)(/api/?$)',
-      );
-      final match = pattern.firstMatch(storedUrl);
-      if (match != null) {
-        final storedApiName = _normalizeName(match.group(2) ?? '');
-        return '${match.group(1)}$storedApiName${match.group(3)}';
-      }
-      return storedUrl;
-    }
-    return defaultApiUrl;
+    return storedUrl.isNotEmpty ? storedUrl : defaultApiUrl;
   }
 
   static String get activeApiName {
     final storedName = _normalizeName(_preferences.apiName);
-    if (storedName.isNotEmpty) {
-      return storedName;
-    }
-    return extractApiName(activeApiUrl);
+    return storedName.isNotEmpty ? storedName : defaultApiName;
   }
 
   static List<String> get availableApiNames {
-    final names = <String>{...predefinedApiNames};
-
-    names.add(defaultApiName);
-
+    final names = <String>{...predefinedApiNames, defaultApiName};
     final selectedName = extractApiName(_preferences.apiUrl);
-    if (selectedName.isNotEmpty) {
-      names.add(selectedName);
-    }
-
-    final result = names.toList()..sort();
-    return result;
+    if (selectedName.isNotEmpty) names.add(selectedName);
+    return names.toList()..sort();
   }
 
   static String buildApiUrl(String apiName) {
     final normalizedName = _normalizeName(apiName);
-    if (normalizedName.isEmpty) {
-      return defaultApiUrl;
-    }
-
-    final pattern = RegExp(
-      r'^(https?://.+?/Biogest\.WebAPI\.)([^/]+)(/api/?$)',
-    );
-    final match = pattern.firstMatch(defaultApiUrl);
-    if (match != null) {
-      return '${match.group(1)}$normalizedName${match.group(3)}';
-    }
-
-    return '$fallbackBaseUrl.$normalizedName/api';
+    return '$fallbackBaseUrl.'
+        '${normalizedName.isEmpty ? defaultApiName : normalizedName}/api';
   }
 
   static String extractApiName(String apiUrl) {
     final normalizedUrl = _normalizeUrl(apiUrl);
     final pattern = RegExp(r'Biogest\.WebAPI\.([^/]+)/api/?$');
     final match = pattern.firstMatch(normalizedUrl);
-    if (match == null) {
-      return '';
-    }
-    return _normalizeName(match.group(1) ?? '');
+    return match == null ? '' : _normalizeName(match.group(1) ?? '');
   }
 
   static Future<void> setActiveApiName(String apiName) async {
     final normalizedName = _normalizeName(apiName);
-    final selectedUrl = buildApiUrl(normalizedName);
     _preferences.apiName = normalizedName;
-    _preferences.apiUrl = selectedUrl;
+    _preferences.apiUrl = buildApiUrl(normalizedName);
   }
 
   static String _normalizeUrl(String value) {
@@ -127,16 +89,11 @@ class ApiConfig {
 
   static String _normalizeName(String value) {
     final normalized = value.trim().replaceAll("'", '');
-    if (normalized.isEmpty) {
-      return '';
-    }
+    if (normalized.isEmpty) return '';
 
     for (final apiName in predefinedApiNames) {
-      if (apiName.toLowerCase() == normalized.toLowerCase()) {
-        return apiName;
-      }
+      if (apiName.toLowerCase() == normalized.toLowerCase()) return apiName;
     }
-
     return normalized;
   }
 }

@@ -2,16 +2,6 @@ name: Publish Android release
 
 on:
   workflow_dispatch:
-    inputs:
-      bump:
-        description: Version increment
-        required: true
-        default: patch
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
 
 permissions:
   contents: write
@@ -23,8 +13,7 @@ concurrency:
 jobs:
   release-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
+    timeout-minutes: 120
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
@@ -47,8 +36,6 @@ jobs:
       - name: Calculate release version
         id: version
         shell: bash
-        env:
-          VERSION_BUMP: ${{ inputs.bump }}
         run: |
           pubspec_version=$(sed -nE 's/^version:[[:space:]]*([^[:space:]]+).*/\1/p' pubspec.yaml)
           if [[ ! "$pubspec_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\+([0-9]+)$ ]]; then
@@ -56,25 +43,8 @@ jobs:
             exit 1
           fi
 
-          source_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-          latest_tag=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
-          latest_version=${latest_tag#v}
-
-          if [[ -n "$latest_version" ]]; then
-            source_version=$(printf '%s\n%s\n' "$source_version" "$latest_version" | sort -V | tail -n 1)
-          fi
-
-          IFS='.' read -r major minor patch <<< "$source_version"
-
-          case "$VERSION_BUMP" in
-            major) major=$((major + 1)); minor=0; patch=0 ;;
-            minor) minor=$((minor + 1)); patch=0 ;;
-            patch) patch=$((patch + 1)) ;;
-            *) echo "Unsupported version increment: $VERSION_BUMP" >&2; exit 1 ;;
-          esac
-
-          version="$major.$minor.$patch"
-          build=$((1000 + GITHUB_RUN_NUMBER))
+          version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+          build="${BASH_REMATCH[4]}"
           tag="v$version"
 
           if git rev-parse "$tag" >/dev/null 2>&1; then
@@ -85,17 +55,6 @@ jobs:
           echo "name=$version" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
-      - name: Restore environment configuration
-        shell: bash
-        env:
-          APP_ENV: ${{ secrets.BIOGEST_ENV }}
-        run: |
-          if [[ -z "$APP_ENV" ]]; then
-            echo "BIOGEST_ENV secret is not configured." >&2
-            exit 1
-          fi
-          printf '%s' "$APP_ENV" > .env
 
       - name: Restore Android signing key
         shell: bash
@@ -127,17 +86,23 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build signed APK
-        run: >-
-          flutter build apk --release
-          --build-name=${{ steps.version.outputs.name }}
-          --build-number=${{ steps.version.outputs.build }}
-
-      - name: Prepare APK
+      - name: Build signed APKs
         shell: bash
-        run: >-
-          cp build/app/outputs/flutter-apk/app-release.apk
-          MyBio-${{ steps.version.outputs.tag }}.apk
+        run: |
+          mkdir -p release
+          mapfile -t clinics < <(jq -er '.clinics[] | select(type == "string" and length > 0)' config/clinics.json)
+          if [[ ${#clinics[@]} -eq 0 ]]; then
+            echo "No clinics are configured in config/clinics.json." >&2
+            exit 1
+          fi
+          for clinic in "${clinics[@]}"; do
+            flutter build apk --release \
+              --build-name=${{ steps.version.outputs.name }} \
+              --build-number=${{ steps.version.outputs.build }} \
+              --dart-define=CLINIC_CODE="$clinic"
+            cp build/app/outputs/flutter-apk/app-release.apk \
+              "release/MyBio-$clinic-${{ steps.version.outputs.tag }}.apk"
+          done
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -147,4 +112,4 @@ jobs:
           name: MyBio ${{ steps.version.outputs.name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: MyBio-${{ steps.version.outputs.tag }}.apk
+          files: release/*.apk

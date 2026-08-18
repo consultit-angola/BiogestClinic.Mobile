@@ -13,12 +13,6 @@ class UserController extends GetxController {
   bool isLoadingStores = false;
   bool hasStoreError = false;
 
-  @override
-  void onInit() {
-    super.onInit();
-    loadStores();
-  }
-
   Future<void> loadStores() async {
     isLoadingStores = true;
     hasStoreError = false;

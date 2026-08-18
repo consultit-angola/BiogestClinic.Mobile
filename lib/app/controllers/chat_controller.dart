@@ -26,25 +26,18 @@ class ChatController extends GetxController {
   final destinationUser = Rxn<UserDTO>();
   final attachments = <AttachmentDTO>[].obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-
-    if (!globalController.isChatControllerLoaded) {
-      getUsers();
-      globalController.isChatControllerLoaded = true;
-    }
-  }
-
   // ────────────────────────────────
   // Users
   // ────────────────────────────────
-  Future<void> getUsers({bool forceReload = false}) async {
+  Future<void> getUsers({
+    bool forceReload = false,
+    bool showLoading = true,
+  }) async {
     if (globalController.users.isNotEmpty && !forceReload) return;
 
     try {
       globalController.users.clear();
-      EasyLoading.show();
+      if (showLoading) EasyLoading.show();
       final resp = await _provider.getUsers();
 
       if (resp['ok']) {
@@ -55,7 +48,7 @@ class ChatController extends GetxController {
     } catch (error) {
       Get.snackbar('Error', '$error');
     } finally {
-      EasyLoading.dismiss();
+      if (showLoading) EasyLoading.dismiss();
     }
   }
 
