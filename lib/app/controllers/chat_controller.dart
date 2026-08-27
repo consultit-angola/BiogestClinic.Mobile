@@ -87,6 +87,13 @@ class ChatController extends GetxController {
         final sent = resp['data'] as MessageDTO..status = MessageStatus.sent;
 
         _replaceTempMessage(key, tempId, sent);
+        globalController.notifyChatMessageSent(
+          message: sent,
+          senderName: globalController.authenticatedUser.value?.name ?? '',
+          attachmentsMimeTypes: selectedAttachments
+              .map((attachment) => _getAttachmentMimeType(attachment.name))
+              .toList(),
+        );
         attachments.clear();
         scrollToBottom();
         return true;
@@ -170,6 +177,31 @@ class ChatController extends GetxController {
     }
   }
 
+  String _getAttachmentMimeType(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    const mimeTypes = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'bmp': 'image/bmp',
+      'pdf': 'application/pdf',
+      'txt': 'text/plain',
+      'doc': 'application/msword',
+      'docx':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx':
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'zip': 'application/zip',
+    };
+    return mimeTypes[extension] ?? 'application/octet-stream';
+  }
+
   void markConversationAsRead() {
     EasyLoading.show();
     if (globalController.messages.isEmpty || destinationUser.value == null) {
@@ -183,12 +215,21 @@ class ChatController extends GetxController {
       return;
     }
 
+    var markedMessages = 0;
     for (final m in msgs) {
-      if (m.destinationUserID == globalController.authenticatedUser.value!.id) {
+      if (m.destinationUserID == globalController.authenticatedUser.value!.id &&
+          m.status != MessageStatus.read) {
         setMessageMarkAsRead(m.id);
         m.status = MessageStatus.read;
+        markedMessages++;
       }
     }
+    globalController.newMessages.remove(destinationUser.value!.id);
+    final remainingMessages =
+        globalController.pendingMessages.value - markedMessages;
+    globalController.pendingMessages.value = remainingMessages < 0
+        ? 0
+        : remainingMessages;
     globalController.messages.refresh();
 
     EasyLoading.dismiss();

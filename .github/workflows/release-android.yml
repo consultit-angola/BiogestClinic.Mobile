@@ -43,6 +43,17 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore environment file
+        shell: bash
+        env:
+          BIOGEST_ENV: ${{ secrets.BIOGEST_ENV }}
+        run: |
+          if [[ -z "$BIOGEST_ENV" ]]; then
+            echo "BIOGEST_ENV is not configured." >&2
+            exit 1
+          fi
+          printf '%s' "$BIOGEST_ENV" > .env
+
       - name: Calculate release version
         id: version
         shell: bash

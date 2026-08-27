@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'preferences.dart';
 
 class ApiConfig {
+  static const String socketServerUrl =
+      'https://biogestclinic.consultit-angola.com';
+
   static const String defaultApiName = String.fromEnvironment(
     'CLINIC_CODE',
     defaultValue: 'Demo',
@@ -55,6 +58,28 @@ class ApiConfig {
   static String get activeApiName {
     final storedName = _normalizeName(_preferences.apiName);
     return storedName.isNotEmpty ? storedName : defaultApiName;
+  }
+
+  static String get socketProjectKey {
+    final apiName = activeApiName;
+    const projectKeys = {
+      'demo': 'demo',
+      'goldente': 'prod-goldente',
+      'hpls': 'prod-hpls-angola',
+      'test': 'test',
+      'testfe': 'test-fe',
+      'zule': 'test2',
+    };
+    final knownKey = projectKeys[apiName.toLowerCase()];
+    if (knownKey != null) return knownKey;
+
+    final kebabCaseName = apiName
+        .replaceAllMapped(
+          RegExp(r'([a-z0-9])([A-Z])'),
+          (match) => '${match.group(1)}-${match.group(2)}',
+        )
+        .toLowerCase();
+    return 'prod-$kebabCaseName';
   }
 
   static List<String> get availableApiNames {

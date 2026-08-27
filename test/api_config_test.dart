@@ -41,4 +41,20 @@ void main() {
       'https://example.test/Biogest.WebAPI.TestFE/api',
     );
   });
+
+  test('maps API names to the Angular socket project keys', () async {
+    expect(ApiConfig.socketProjectKey, 'demo');
+
+    await ApiConfig.setActiveApiName('BomSenso');
+    expect(ApiConfig.socketProjectKey, 'prod-bom-senso');
+
+    await ApiConfig.setActiveApiName('GolDente');
+    expect(ApiConfig.socketProjectKey, 'prod-goldente');
+
+    await ApiConfig.setActiveApiName('TestFE');
+    expect(ApiConfig.socketProjectKey, 'test-fe');
+
+    await ApiConfig.setActiveApiName('Zule');
+    expect(ApiConfig.socketProjectKey, 'test2');
+  });
 }

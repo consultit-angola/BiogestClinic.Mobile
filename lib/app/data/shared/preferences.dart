@@ -1,12 +1,12 @@
 /*
-  Recordar instalar el paquete de:
+  Remember to install the package:
     shared_preferences:
 
-  Inicializar en el main
+  Initialize it in main:
     final prefs = new Preferences();
     await prefs.initPrefs();
     
-    Recuerden que el main() debe de ser async {...
+  Remember that main() must be async {...
 
 */
 // import 'dart:convert';

@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
+import '../data/services/notification_socket_service.dart';
 import '../data/shared/index.dart';
 import '../routes/app_routes.dart';
 import 'index.dart';
@@ -22,6 +23,8 @@ class GlobalController extends GetxController {
 
   final Provider _provider = Provider();
   final Preferences _pref = Preferences();
+  final NotificationSocketService _notificationSocketService =
+      NotificationSocketService();
   RxBool isAuthenticated = false.obs;
   final Rxn<UserDTO> authenticatedUser = Rxn<UserDTO>();
   final Rxn<EmployeeDTO> authenticatedEmployee = Rxn<EmployeeDTO>();
@@ -47,11 +50,13 @@ class GlobalController extends GetxController {
 
   var isCalendarControllerLoaded = false;
   var isChatControllerLoaded = false;
-  Timer? timerChats;
   Timer? timerAlarms;
   Timer? timerAppts;
   bool _handlingExpiredSession = false;
   bool _timersStoppedByConnection = false;
+  bool _loadingSocketMessages = false;
+  bool _socketMessageRefreshPending = false;
+  final Set<int> _pendingAttachmentChatIDs = <int>{};
   int _pageRefreshCount = 0;
 
   bool hasPermission(int permission) {
@@ -167,7 +172,7 @@ class GlobalController extends GetxController {
 
     EasyLoading.show(status: 'Carregando agenda, mensagens e alarmes...');
     await Future.wait([
-      startChatTimer(),
+      startNotificationSocket(),
       if (canAccessAlarms) getProgrammedAlarms(),
       if (canAccessAppointmentCalendar) startApptsTimer(),
     ]);
@@ -196,10 +201,7 @@ class GlobalController extends GetxController {
         if (Get.isRegistered<ChatController>()) {
           await _runPageRefresh(
             () => Future.wait([
-              ChatController.to.getUsers(
-                forceReload: true,
-                showLoading: false,
-              ),
+              ChatController.to.getUsers(forceReload: true, showLoading: false),
               getMessages(onlyUnread: false),
               getMessages(),
             ]),
@@ -247,14 +249,75 @@ class GlobalController extends GetxController {
     }
   }
 
-  Future<void> startChatTimer() async {
+  Future<void> startNotificationSocket() async {
+    final user = authenticatedUser.value;
+    if (user == null) return;
+
+    _notificationSocketService.onMessageReceivedByUser(
+      _handleSocketMessageReceived,
+    );
+    _notificationSocketService.connect(onReconnected: () => getMessages());
+    _notificationSocketService.joinChannel(
+      '${ApiConfig.socketProjectKey}|${user.id}',
+    );
     await Future.wait([getMessages(onlyUnread: false), getMessages()]);
-    if (authenticatedUser.value == null || _timersStoppedByConnection) {
+  }
+
+  Future<void> _handleSocketMessageReceived(
+    MessageReceivedByUserEvent event,
+  ) async {
+    if (authenticatedUser.value == null) return;
+
+    final chatID = event.chatID;
+    if (event.hasAttachment && chatID != null) {
+      _pendingAttachmentChatIDs.add(chatID);
+    }
+    _socketMessageRefreshPending = true;
+
+    if (_loadingSocketMessages) {
       return;
     }
-    timerChats = Timer.periodic(const Duration(seconds: 5), (time) {
-      getMessages();
-    });
+
+    _loadingSocketMessages = true;
+    try {
+      do {
+        _socketMessageRefreshPending = false;
+        final attachmentChatIDs = Set<int>.from(_pendingAttachmentChatIDs);
+        _pendingAttachmentChatIDs.clear();
+
+        await getMessages();
+
+        for (final attachmentChatID in attachmentChatIDs) {
+          await getMessages(onlyUnread: false, userID: attachmentChatID);
+        }
+      } while (_socketMessageRefreshPending && authenticatedUser.value != null);
+    } finally {
+      _loadingSocketMessages = false;
+    }
+  }
+
+  void notifyChatMessageSent({
+    required MessageDTO message,
+    required String senderName,
+    required List<String> attachmentsMimeTypes,
+  }) {
+    final senderID = authenticatedUser.value?.id;
+    if (senderID == null) return;
+
+    _notificationSocketService.sendMessageToUser(
+      senderID: senderID,
+      senderName: senderName,
+      message: message.messageText,
+      creationDate: message.creationDate,
+      attachmentsMimeTypes: attachmentsMimeTypes,
+      recipientID: message.destinationUserID,
+    );
+  }
+
+  void disconnectNotificationSocket() {
+    _notificationSocketService.disconnect();
+    _pendingAttachmentChatIDs.clear();
+    _socketMessageRefreshPending = false;
   }
 
   void startAlarmTimer() async {
@@ -285,13 +348,13 @@ class GlobalController extends GetxController {
   }
 
   void stopTimer() {
-    timerChats?.cancel();
     timerAlarms?.cancel();
     timerAppts?.cancel();
   }
 
   Future<void> clearSession({bool clearPreferences = false}) async {
     stopTimer();
+    disconnectNotificationSocket();
     authenticatedUser.value = null;
     authenticatedEmployee.value = null;
     selectedStoreName.value = '';
@@ -359,12 +422,13 @@ class GlobalController extends GetxController {
     DateTime? startDate,
     DateTime? endDate,
     bool onlyUnread = true,
+    int? userID,
     bool forceReload = false,
   }) async {
     final data = {
       "StartDate": startDate?.toUtc().toIso8601String(),
       "EndDate": endDate?.toUtc().toIso8601String(),
-      "UserID": onlyUnread ? 0 : authenticatedUser.value!.id,
+      "UserID": onlyUnread ? 0 : userID ?? authenticatedUser.value!.id,
       "OnlyUnread": onlyUnread,
     };
 
@@ -380,24 +444,24 @@ class GlobalController extends GetxController {
     if (resp['ok']) {
       var auxMessages = resp['data'] as List<MessageDTO>;
 
-      // actualizar contador pending
+      // Update the pending message counter
       if (onlyUnread) {
         pendingMessages.value = auxMessages.length <= 99
             ? auxMessages.length
             : 99;
       }
 
-      // Insertar/actualizar incrementalmente
+      // Insert or update incrementally
       for (var message in auxMessages) {
         final key = message.destinationUserID == authenticatedUser.value!.id
             ? message.creationUserID
             : message.destinationUserID;
 
-        // asegurar existencia de la lista en old/new
+        // Ensure the list exists in the old/new map
         final targetMap = onlyUnread ? newMessages : oldMessages;
         final existing = targetMap.putIfAbsent(key, () => <MessageDTO>[].obs);
 
-        // si ya existe, actualizar (por ejemplo cambiar status o texto)
+        // Update an existing message when its status or text changes
         final idx = existing.indexWhere((m) => m.id == message.id);
         if (idx != -1) {
           existing[idx] = message;
@@ -405,13 +469,13 @@ class GlobalController extends GetxController {
           existing.add(message);
         }
 
-        // fusionar con lista principal de mensajes sin reemplazarla
+        // Merge into the main message list without replacing it
         final mainList = messages.putIfAbsent(key, () => <MessageDTO>[].obs);
 
         for (var newMsg in existing) {
           final mIdx = mainList.indexWhere((m) => m.id == newMsg.id);
           if (mIdx != -1) {
-            // mantener el estado anterior
+            // Preserve the previous status
             mainList[mIdx] = MessageDTO(
               id: newMsg.id,
               messageText: newMsg.messageText,
@@ -426,10 +490,10 @@ class GlobalController extends GetxController {
           }
         }
 
-        // ordenar por fecha
+        // Sort by date
         mainList.sort((a, b) => a.creationDate.compareTo(b.creationDate));
 
-        // refresca solo esta RxList
+        // Refresh only this RxList
         mainList.refresh();
       }
     } else {
@@ -465,16 +529,16 @@ class GlobalController extends GetxController {
       return;
     }
     if (resp['ok']) {
-      // 🔹 Limpia todas las listas de instancias antes de volver a llenarlas
+      // 🔹 Clear all instance lists before repopulating them
       programmedAlarmsMap.forEach((key, value) {
         (value['instances'] as List).clear();
         value['length'] = 0;
       });
 
-      // 🔹 Asigna las nuevas instancias
+      // 🔹 Assign the new instances
       alarmInstances.value = resp['data'] as List<AlarmInstanceDTO>;
 
-      // 🔹 Vuelve a llenar las instancias agrupadas
+      // 🔹 Repopulate the grouped instances
       for (var instance in alarmInstances) {
         final alarm = programmedAlarmsMap[instance.alarmId];
         if (alarm != null) {
@@ -482,7 +546,7 @@ class GlobalController extends GetxController {
         }
       }
 
-      // 🔹 Recalcula los conteos
+      // 🔹 Recalculate the counts
       pendingAlarms.value = 0;
       programmedAlarmsMap.forEach((key, value) {
         value['length'] = (value['instances'] as List).length;

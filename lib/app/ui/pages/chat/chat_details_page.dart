@@ -15,7 +15,7 @@ class ChatDetailsPage extends GetView<ChatController> {
 
   @override
   Widget build(BuildContext context) {
-    // Ejecutar después del primer frame (solo una vez)
+    // Run after the first frame (only once)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.markConversationAsRead();
     });
@@ -60,12 +60,12 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  /// 🔹 Área del chat con lista de mensajes y campo de entrada
+  /// 🔹 Chat area with message list and input field
   Widget _buildChatArea() {
     return Expanded(
       child: Column(
         children: [
-          // Lista de mensajes
+          // Message list
           Expanded(
             child: Obx(() {
               final messages = controller.sortList();
@@ -96,14 +96,14 @@ class ChatDetailsPage extends GetView<ChatController> {
             }),
           ),
 
-          // Campo de entrada
+          // Input field
           _buildMessageInput(),
         ],
       ),
     );
   }
 
-  /// 🔹 Burbujas de chat (enviadas y recibidas)
+  /// 🔹 Chat bubbles (sent and received)
   Widget _buildChatBubble(MessageDTO msg) {
     final isMine =
         msg.creationUserID ==
@@ -298,7 +298,7 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  /// 🔹 Texto del mensaje
+  /// 🔹 Message text
   Widget _buildMessageText(MessageDTO msg) {
     return Text(
       msg.messageText,
@@ -309,7 +309,7 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  /// 🔹 Estado y hora del mensaje
+  /// 🔹 Message status and time
   Widget _buildMessageState(MessageDTO msg, bool isMine) {
     IconData? icon;
     Color? color;
@@ -352,7 +352,7 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  /// 🔹 Etiqueta de día
+  /// 🔹 Day label
   Widget _buildDateLabel(DateTime date) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -376,7 +376,7 @@ class ChatDetailsPage extends GetView<ChatController> {
     );
   }
 
-  /// 🔹 Campo de entrada del mensaje
+  /// 🔹 Message input field
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.all(8),

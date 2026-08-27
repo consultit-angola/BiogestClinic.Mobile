@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -12,6 +13,7 @@ import 'app/ui/index.dart';
 void main() async {
   final prefs = Preferences();
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await ApiConfig.initialize();
   await prefs.initPrefs();
 
@@ -40,7 +42,7 @@ class _MainAppState extends State<MainApp> {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     return SafeArea(
       child: ScreenUtilInit(
-        designSize: const Size(390, 844), // Tamaño base (ejemplo: iPhone 12)
+        designSize: const Size(390, 844), // Base size (example: iPhone 12)
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (_, child) => GetMaterialApp(
