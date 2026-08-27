@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import 'app/controllers/index.dart';
+import 'app/data/services/push_notification_service.dart';
 import 'app/routes/index.dart';
 import 'app/data/shared/index.dart';
 import 'app/ui/index.dart';
@@ -16,6 +17,7 @@ void main() async {
   await dotenv.load(fileName: '.env');
   await ApiConfig.initialize();
   await prefs.initPrefs();
+  await PushNotificationService.instance.initialize();
 
   Get.put(GlobalController());
   Get.put(AppUpdateController());
@@ -59,6 +61,11 @@ class _MainAppState extends State<MainApp> {
               return;
             }
             _activeRoute = route;
+            if (route != Routes.chat &&
+                route != Routes.chatDetails &&
+                Get.isRegistered<ChatController>()) {
+              ChatController.to.clearConversationSearch();
+            }
             WidgetsBinding.instance.addPostFrameCallback((_) {
               GlobalController.to.refreshPage(route);
             });

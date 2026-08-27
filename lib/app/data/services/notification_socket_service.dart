@@ -39,7 +39,10 @@ class NotificationSocketService {
   FutureOr<void> Function(MessageReceivedByUserEvent event)?
   _onMessageReceivedByUser;
 
-  void connect({required FutureOr<void> Function() onReconnected}) {
+  void connect({
+    required FutureOr<void> Function() onConnected,
+    required FutureOr<void> Function() onReconnected,
+  }) {
     disconnect();
     final serverSecret = dotenv.env['SOCKET_SERVER_SECRET']?.trim() ?? '';
     if (serverSecret.isEmpty) {
@@ -53,7 +56,7 @@ class NotificationSocketService {
       io.OptionBuilder()
           .setPath('/socket.io')
           .setAuth({'token': serverSecret})
-          .setTransports(['websocket'])
+          .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
           .enableReconnection()
           .build(),
@@ -67,6 +70,8 @@ class NotificationSocketService {
 
       if (_hasConnected) {
         onReconnected();
+      } else {
+        onConnected();
       }
       _hasConnected = true;
     });
@@ -121,6 +126,71 @@ class NotificationSocketService {
         'attachmentsMimeTypes': attachmentsMimeTypes,
       },
     });
+  }
+
+  Future<bool> registerDeviceToken({
+    required String channel,
+    required String token,
+  }) {
+    return _emitWithAcknowledgement('register-device-token', {
+      'channel': channel,
+      'token': token,
+      'platform': 'android',
+    });
+  }
+
+  Future<bool> unregisterDeviceToken(String token) {
+    return _emitWithAcknowledgement('unregister-device-token', {
+      'token': token,
+    });
+  }
+
+  Future<bool> syncPendingSenders({
+    required String channel,
+    required Iterable<int> senderIDs,
+  }) {
+    return _emitWithAcknowledgement('sync-pending-senders', {
+      'channel': channel,
+      'senderIDs': senderIDs.toSet().toList(),
+    });
+  }
+
+  Future<bool> markSenderAsRead({
+    required String channel,
+    required int senderID,
+  }) {
+    return _emitWithAcknowledgement('mark-chat-read', {
+      'channel': channel,
+      'senderID': senderID,
+    });
+  }
+
+  Future<bool> _emitWithAcknowledgement(
+    String event,
+    Map<String, dynamic> payload,
+  ) async {
+    final socket = _socket;
+    if (socket?.connected != true) return false;
+
+    final completer = Completer<dynamic>();
+    socket!.emitWithAck(
+      event,
+      payload,
+      ack: (response) {
+        if (!completer.isCompleted) {
+          completer.complete(response);
+        }
+      },
+    );
+
+    try {
+      final response = await completer.future.timeout(
+        const Duration(seconds: 5),
+      );
+      return response is Map && response['ok'] == true;
+    } catch (_) {
+      return false;
+    }
   }
 
   void disconnect() {

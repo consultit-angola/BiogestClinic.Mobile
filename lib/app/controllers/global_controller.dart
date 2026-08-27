@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
 import '../data/services/notification_socket_service.dart';
+import '../data/services/push_notification_service.dart';
 import '../data/shared/index.dart';
 import '../routes/app_routes.dart';
 import 'index.dart';
@@ -25,6 +26,8 @@ class GlobalController extends GetxController {
   final Preferences _pref = Preferences();
   final NotificationSocketService _notificationSocketService =
       NotificationSocketService();
+  final PushNotificationService _pushNotificationService =
+      PushNotificationService.instance;
   RxBool isAuthenticated = false.obs;
   final Rxn<UserDTO> authenticatedUser = Rxn<UserDTO>();
   final Rxn<EmployeeDTO> authenticatedEmployee = Rxn<EmployeeDTO>();
@@ -43,6 +46,7 @@ class GlobalController extends GetxController {
       <NeatCleanCalendarEvent>[].obs;
   final Map<String, dynamic> calendarFilters = {};
   var pendingMessages = 0.obs;
+  var pendingConversations = 0.obs;
   var pendingCalendar = 0.obs;
   var pendingAlarms = 0.obs;
   var pendingActivities = 0.obs;
@@ -57,6 +61,7 @@ class GlobalController extends GetxController {
   bool _loadingSocketMessages = false;
   bool _socketMessageRefreshPending = false;
   final Set<int> _pendingAttachmentChatIDs = <int>{};
+  StreamSubscription<String>? _pushTokenSubscription;
   int _pageRefreshCount = 0;
 
   bool hasPermission(int permission) {
@@ -136,10 +141,9 @@ class GlobalController extends GetxController {
     if (!_handlingExpiredSession) {
       _handlingExpiredSession = true;
       stopTimer();
-      await _pref.clear();
       Get.offAllNamed(Routes.login);
       await Future<void>.delayed(Get.defaultTransitionDuration);
-      await clearSession();
+      await clearSession(clearPreferences: true);
       Get.snackbar(
         'Sessão terminada',
         'A sua sessão foi encerrada noutro dispositivo.',
@@ -253,14 +257,48 @@ class GlobalController extends GetxController {
     final user = authenticatedUser.value;
     if (user == null) return;
 
+    await _preparePushNotifications();
+
     _notificationSocketService.onMessageReceivedByUser(
       _handleSocketMessageReceived,
     );
-    _notificationSocketService.connect(onReconnected: () => getMessages());
+    _notificationSocketService.connect(
+      onConnected: _registerPushDevice,
+      onReconnected: () async {
+        await _registerPushDevice();
+        await getMessages();
+      },
+    );
     _notificationSocketService.joinChannel(
       '${ApiConfig.socketProjectKey}|${user.id}',
     );
     await Future.wait([getMessages(onlyUnread: false), getMessages()]);
+  }
+
+  Future<void> _preparePushNotifications() async {
+    await _pushTokenSubscription?.cancel();
+    _pushTokenSubscription = _pushNotificationService.tokenRefresh.listen((
+      token,
+    ) {
+      _pref.tokenFCM = token;
+      unawaited(_registerPushDevice(token: token));
+    });
+
+    final token = await _pushNotificationService.requestPermissionAndGetToken();
+    if (token != null && token.isNotEmpty) {
+      _pref.tokenFCM = token;
+    }
+  }
+
+  Future<void> _registerPushDevice({String? token}) async {
+    final user = authenticatedUser.value;
+    final deviceToken = token ?? _pref.tokenFCM;
+    if (user == null || deviceToken.isEmpty) return;
+
+    await _notificationSocketService.registerDeviceToken(
+      channel: '${ApiConfig.socketProjectKey}|${user.id}',
+      token: deviceToken,
+    );
   }
 
   Future<void> _handleSocketMessageReceived(
@@ -314,7 +352,33 @@ class GlobalController extends GetxController {
     );
   }
 
-  void disconnectNotificationSocket() {
+  void notifyChatRead(int senderID) {
+    final user = authenticatedUser.value;
+    if (user == null) return;
+
+    unawaited(
+      Future.wait([
+        _notificationSocketService.markSenderAsRead(
+          channel: '${ApiConfig.socketProjectKey}|${user.id}',
+          senderID: senderID,
+        ),
+        _pushNotificationService.cancelSenderNotification(senderID),
+      ]),
+    );
+  }
+
+  Future<void> disconnectNotificationSocket({
+    bool unregisterDevice = false,
+  }) async {
+    final deviceToken = _pref.tokenFCM;
+    if (unregisterDevice && deviceToken.isNotEmpty) {
+      await _notificationSocketService.unregisterDeviceToken(deviceToken);
+    }
+    if (unregisterDevice) {
+      await _pushNotificationService.cancelAllNotifications();
+    }
+    await _pushTokenSubscription?.cancel();
+    _pushTokenSubscription = null;
     _notificationSocketService.disconnect();
     _pendingAttachmentChatIDs.clear();
     _socketMessageRefreshPending = false;
@@ -354,7 +418,7 @@ class GlobalController extends GetxController {
 
   Future<void> clearSession({bool clearPreferences = false}) async {
     stopTimer();
-    disconnectNotificationSocket();
+    await disconnectNotificationSocket(unregisterDevice: true);
     authenticatedUser.value = null;
     authenticatedEmployee.value = null;
     selectedStoreName.value = '';
@@ -370,6 +434,7 @@ class GlobalController extends GetxController {
     alarmInstances.clear();
     eventList.clear();
     pendingMessages.value = 0;
+    pendingConversations.value = 0;
     pendingCalendar.value = 0;
     pendingAlarms.value = 0;
     pendingActivities.value = 0;
@@ -404,10 +469,9 @@ class GlobalController extends GetxController {
       if (resp['ok']) {
         EasyLoading.dismiss();
         stopTimer();
-        await _pref.clear();
         Get.offAllNamed(Routes.login);
         await Future<void>.delayed(Get.defaultTransitionDuration);
-        await clearSession();
+        await clearSession(clearPreferences: true);
       } else {
         Get.snackbar('Error', resp['message']);
       }
@@ -449,6 +513,22 @@ class GlobalController extends GetxController {
         pendingMessages.value = auxMessages.length <= 99
             ? auxMessages.length
             : 99;
+
+        final currentUserID = authenticatedUser.value!.id;
+        final senderIDs = auxMessages
+            .where((message) => message.destinationUserID == currentUserID)
+            .map((message) => message.creationUserID)
+            .toSet();
+        pendingConversations.value = senderIDs.length;
+        unawaited(
+          Future.wait([
+            _notificationSocketService.syncPendingSenders(
+              channel: '${ApiConfig.socketProjectKey}|$currentUserID',
+              senderIDs: senderIDs,
+            ),
+            _pushNotificationService.syncActiveSenderNotifications(senderIDs),
+          ]),
+        );
       }
 
       // Insert or update incrementally

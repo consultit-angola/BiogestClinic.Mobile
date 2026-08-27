@@ -1,12 +1,16 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:searchfield/searchfield.dart';
 
 import '../../../controllers/index.dart';
 import '../../../data/models/index.dart';
-import '../../../routes/index.dart';
 import '../../index.dart';
+import 'broadcast_dialog.dart';
+import 'new_conversation_dialog.dart';
+
+enum _ChatCreationAction { newConversation, broadcast }
+
+enum _ChatGeneralAction { markAllAsRead }
 
 class ChatPage extends GetView<ChatController> {
   const ChatPage({super.key});
@@ -20,7 +24,7 @@ class ChatPage extends GetView<ChatController> {
         body: Column(
           children: [
             customAppbar(),
-            search(chatController),
+            search(context, chatController),
             Obx(() {
               final messagesMap = chatController.globalController.messages;
               return lastMessages(chatController, messagesMap);
@@ -37,6 +41,7 @@ class ChatPage extends GetView<ChatController> {
     RxMap<int, RxList<MessageDTO>> messagesMap,
   ) {
     var lastMessages = <Widget>[];
+    final query = chatController.conversationSearchQuery.value.toLowerCase();
 
     for (final entry in messagesMap.entries) {
       final user = chatController.globalController.users.firstWhereOrNull(
@@ -56,11 +61,18 @@ class ChatPage extends GetView<ChatController> {
 
       if (user != null) {
         final lastMessage = chatMessages.last;
+        final lastMessageText = _getLastMessageText(lastMessage);
+        final matchesSearch =
+            query.isEmpty ||
+            user.name.toLowerCase().contains(query) ||
+            lastMessageText.toLowerCase().contains(query);
+        if (!matchesSearch) continue;
+
         lastMessages.add(
           contact(
             chatController: chatController,
             user: user,
-            lastMessage: _getLastMessageText(lastMessage),
+            lastMessage: lastMessageText,
             time: DateFormat('HH:mm').format(lastMessage.creationDate),
             pendingMessages: pendingMessages,
           ),
@@ -123,10 +135,7 @@ class ChatPage extends GetView<ChatController> {
             )
           : null,
       onTap: () {
-        chatController.destinationUser.value = user;
-        chatController.searchFocusNode.unfocus();
-        chatController.searchController.clear();
-        Get.toNamed(Routes.chatDetails);
+        chatController.openConversation(user, markAsRead: true);
       },
       trailing: showTime
           ? Padding(
@@ -161,56 +170,170 @@ class ChatPage extends GetView<ChatController> {
     );
   }
 
-  Widget search(ChatController chatController) {
+  Widget search(BuildContext context, ChatController chatController) {
     return Padding(
       padding: EdgeInsets.all(Get.width * 0.05),
-      child: Container(
-        decoration: BoxDecoration(
-          color: CustomColors.witheColor,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 2,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: SearchField<UserDTO>(
-          controller: chatController.searchController,
-          focusNode: chatController.searchFocusNode,
-          maxSuggestionsInViewPort: 5,
-          itemHeight: 60,
-          suggestionsDecoration: SuggestionDecoration(
-            color: CustomColors.witheColor,
-            borderRadius: const BorderRadius.all(Radius.circular(30)),
-            elevation: 8,
-          ),
-          searchInputDecoration: SearchInputDecoration(
-            hintText: 'Pesquisar contatos',
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            fillColor: CustomColors.witheColor,
-            border: InputBorder.none,
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: GestureDetector(
-              // onTapDown: (){},
-              child: Icon(Icons.group_add_sharp, size: Get.width * 0.08),
-            ),
-          ),
-          suggestions: chatController.globalController.users
-              .map(
-                (user) => SearchFieldListItem<UserDTO>(
-                  user.name,
-                  child: contact(
-                    chatController: chatController,
-                    user: user,
-                    showTime: false,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: CustomColors.witheColor,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 2,
+                    offset: const Offset(0, 8),
                   ),
+                ],
+              ),
+              child: Obx(
+                () => TextField(
+                  controller: chatController.searchController,
+                  focusNode: chatController.searchFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'Pesquisar conversas',
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    fillColor: CustomColors.witheColor,
+                    border: InputBorder.none,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon:
+                        chatController.conversationSearchQuery.value.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Limpiar búsqueda',
+                            icon: const Icon(Icons.close),
+                            onPressed: chatController.clearConversationSearch,
+                          ),
+                  ),
+                  onChanged: (value) =>
+                      chatController.conversationSearchQuery.value = value
+                          .trim(),
                 ),
-              )
-              .toList(),
-        ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          PopupMenuButton<_ChatCreationAction>(
+            tooltip: 'Criar mensagem',
+            icon: const Icon(Icons.chat, color: CustomColors.secondaryColor),
+            onSelected: (action) =>
+                _handleCreationAction(context, chatController, action),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _ChatCreationAction.newConversation,
+                child: Row(
+                  children: [
+                    Icon(Icons.group),
+                    SizedBox(width: 12),
+                    Text('Nova conversa'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: _ChatCreationAction.broadcast,
+                child: Row(
+                  children: [
+                    Icon(Icons.groups),
+                    SizedBox(width: 12),
+                    Text('Nova mensagem de difusão'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          PopupMenuButton<_ChatGeneralAction>(
+            tooltip: 'Mais opções',
+            icon: const Icon(
+              Icons.more_vert,
+              color: CustomColors.secondaryColor,
+            ),
+            onSelected: (action) {
+              if (action == _ChatGeneralAction.markAllAsRead) {
+                chatController.markAllConversationsAsRead();
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _ChatGeneralAction.markAllAsRead,
+                child: Text('Marcar todas como lidas'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _handleCreationAction(
+    BuildContext context,
+    ChatController chatController,
+    _ChatCreationAction action,
+  ) async {
+    chatController.searchFocusNode.unfocus();
+    if (chatController.globalController.users.isEmpty) {
+      await chatController.getUsers();
+    }
+    if (!context.mounted) return;
+
+    if (chatController.globalController.users.isEmpty) {
+      Get.snackbar('Informação', 'Não existem utilizadores disponíveis.');
+      return;
+    }
+
+    if (action == _ChatCreationAction.newConversation) {
+      final user = await _showNewConversationDialog(chatController);
+      if (user != null && context.mounted) {
+        _openConversation(chatController, user);
+      }
+      return;
+    }
+
+    final request = await _showBroadcastDialog(chatController);
+    if (request != null) {
+      await chatController.sendBroadcastMessage(
+        users: request.users,
+        text: request.message,
+      );
+    }
+  }
+
+  Future<UserDTO?> _showNewConversationDialog(
+    ChatController chatController,
+  ) async {
+    final users = [...chatController.globalController.users]
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final tag = 'new-conversation-${DateTime.now().microsecondsSinceEpoch}';
+    Get.put(NewConversationDialogController(users: users), tag: tag);
+
+    try {
+      return await Get.dialog<UserDTO>(NewConversationDialog(tag: tag));
+    } finally {
+      if (Get.isRegistered<NewConversationDialogController>(tag: tag)) {
+        await Get.delete<NewConversationDialogController>(tag: tag);
+      }
+    }
+  }
+
+  Future<BroadcastRequest?> _showBroadcastDialog(
+    ChatController chatController,
+  ) async {
+    final users = [...chatController.globalController.users]
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final tag = 'broadcast-${DateTime.now().microsecondsSinceEpoch}';
+    Get.put(BroadcastDialogController(users: users), tag: tag);
+
+    try {
+      return await Get.dialog<BroadcastRequest>(BroadcastDialog(tag: tag));
+    } finally {
+      if (Get.isRegistered<BroadcastDialogController>(tag: tag)) {
+        await Get.delete<BroadcastDialogController>(tag: tag);
+      }
+    }
+  }
+
+  void _openConversation(ChatController chatController, UserDTO user) {
+    chatController.openConversation(user);
   }
 }

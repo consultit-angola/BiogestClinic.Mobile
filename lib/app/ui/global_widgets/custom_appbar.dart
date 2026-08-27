@@ -105,21 +105,27 @@ class _AuthenticatedHeaderState extends State<_AuthenticatedHeader> {
             ),
             IconButton(
               tooltip: 'Chat',
-              onPressed: () => Get.toNamed(Routes.chat),
-              icon: const Icon(
-                Icons.chat_outlined,
-                color: Colors.white,
-                size: 22,
+              onPressed: () {
+                if (Get.isRegistered<ChatController>()) {
+                  ChatController.to.openPendingConversationOrChat();
+                  return;
+                }
+                Get.toNamed(Routes.chat);
+              },
+              icon: _HeaderIconWithBadge(
+                icon: Icons.chat_outlined,
+                count: globalController.pendingConversations.value,
+                iconSize: 22,
               ),
             ),
             if (globalController.canAccessAlarms)
               IconButton(
                 tooltip: 'Alarmes',
                 onPressed: () => Get.toNamed(Routes.alarm),
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: Colors.white,
-                  size: 24,
+                icon: _HeaderIconWithBadge(
+                  icon: Icons.notifications_none,
+                  count: globalController.pendingAlarms.value,
+                  iconSize: 24,
                 ),
               ),
           ],
@@ -133,6 +139,51 @@ class _AuthenticatedHeaderState extends State<_AuthenticatedHeader> {
     if (hour >= 5 && hour < 12) return 'Bom dia';
     if (hour >= 12 && hour < 18) return 'Boa tarde';
     return 'Boa noite';
+  }
+}
+
+class _HeaderIconWithBadge extends StatelessWidget {
+  final IconData icon;
+  final int count;
+  final double iconSize;
+
+  const _HeaderIconWithBadge({
+    required this.icon,
+    required this.count,
+    required this.iconSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon, color: Colors.white, size: iconSize),
+        if (count > 0)
+          Positioned(
+            top: -8,
+            right: -10,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 

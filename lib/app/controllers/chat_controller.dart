@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
+import '../routes/index.dart';
 import 'index.dart';
 
 class ChatController extends GetxController {
@@ -20,11 +22,73 @@ class ChatController extends GetxController {
 
   final searchFocusNode = FocusNode();
   final searchController = TextEditingController();
+  final conversationSearchQuery = ''.obs;
   final inputController = TextEditingController();
   final scrollController = ScrollController();
 
   final destinationUser = Rxn<UserDTO>();
   final attachments = <AttachmentDTO>[].obs;
+
+  void clearConversationSearch() {
+    searchController.clear();
+    conversationSearchQuery.value = '';
+  }
+
+  Future<void> openPendingConversationOrChat() async {
+    if (globalController.pendingConversations.value != 1) {
+      _openChatList();
+      return;
+    }
+
+    var user = _singlePendingConversationUser();
+    if (user == null) {
+      await getUsers();
+      user = _singlePendingConversationUser();
+    }
+
+    if (user == null) {
+      _openChatList();
+      return;
+    }
+
+    openConversation(user, markAsRead: true);
+  }
+
+  void _openChatList() {
+    if (Get.currentRoute != Routes.chat) {
+      Get.toNamed(Routes.chat);
+    }
+  }
+
+  void openConversation(UserDTO user, {bool markAsRead = false}) {
+    destinationUser.value = user;
+    searchFocusNode.unfocus();
+    if (markAsRead) {
+      markConversationAsRead();
+    }
+    Get.toNamed(Routes.chatDetails);
+  }
+
+  UserDTO? _singlePendingConversationUser() {
+    final currentUserID = globalController.authenticatedUser.value?.id;
+    if (currentUserID == null) return null;
+
+    final senderIDs = globalController.newMessages.entries
+        .where(
+          (entry) => entry.value.any(
+            (message) =>
+                message.destinationUserID == currentUserID &&
+                message.status != MessageStatus.read,
+          ),
+        )
+        .map((entry) => entry.key)
+        .toList();
+    if (senderIDs.length != 1) return null;
+
+    return globalController.users.firstWhereOrNull(
+      (user) => user.id == senderIDs.single,
+    );
+  }
 
   // ────────────────────────────────
   // Users
@@ -56,9 +120,12 @@ class ChatController extends GetxController {
   // Messages
   // ────────────────────────────────
   Future<bool?> sendMessage() async {
+    final user = destinationUser.value;
     final text = inputController.text.trim();
     final selectedAttachments = List<AttachmentDTO>.from(attachments);
-    if (text.isEmpty && selectedAttachments.isEmpty) return null;
+    if (user == null || (text.isEmpty && selectedAttachments.isEmpty)) {
+      return null;
+    }
 
     final tempId = -DateTime.now().millisecondsSinceEpoch;
     final now = DateTime.now();
@@ -68,7 +135,7 @@ class ChatController extends GetxController {
       messageText: text.isEmpty ? 'attachDocument' : text,
       creationDate: now,
       creationUserID: 0,
-      destinationUserID: destinationUser.value!.id,
+      destinationUserID: user.id,
       attachments: selectedAttachments,
       status: MessageStatus.sending,
     );
@@ -104,6 +171,61 @@ class ChatController extends GetxController {
     } catch (error) {
       _setMessageStatus(key, tempId, MessageStatus.failed);
       return false;
+    }
+  }
+
+  Future<void> sendBroadcastMessage({
+    required List<UserDTO> users,
+    required String text,
+  }) async {
+    final messageText = text.trim();
+    if (users.isEmpty || messageText.isEmpty) return;
+
+    EasyLoading.show();
+    try {
+      final now = DateTime.now();
+      final results = await Future.wait(
+        users.map((user) async {
+          final message = MessageDTO(
+            id: 0,
+            messageText: messageText,
+            creationDate: now,
+            creationUserID: 0,
+            destinationUserID: user.id,
+            attachments: const [],
+          );
+          final resp = await _provider.sendMessage(message: message);
+          if (resp['ok'] != true) return false;
+
+          final sent = resp['data'] as MessageDTO..status = MessageStatus.sent;
+          _addSentMessage(user.id, sent);
+          globalController.notifyChatMessageSent(
+            message: sent,
+            senderName: globalController.authenticatedUser.value?.name ?? '',
+            attachmentsMimeTypes: const [],
+          );
+          return true;
+        }),
+      );
+
+      final sentCount = results.where((sent) => sent).length;
+      if (sentCount == users.length) {
+        Get.snackbar(
+          'Sucesso',
+          'Mensagem de difusão enviada para $sentCount utilizadores.',
+        );
+      } else if (sentCount > 0) {
+        Get.snackbar(
+          'Atenção',
+          'Mensagem enviada para $sentCount de ${users.length} utilizadores.',
+        );
+      } else {
+        Get.snackbar('Erro', 'Não foi possível enviar a mensagem de difusão.');
+      }
+    } catch (error) {
+      Get.snackbar('Erro', 'Não foi possível enviar a mensagem: $error');
+    } finally {
+      EasyLoading.dismiss();
     }
   }
 
@@ -167,6 +289,22 @@ class ChatController extends GetxController {
     globalController.messages.refresh();
   }
 
+  void _addSentMessage(int key, MessageDTO message) {
+    final messages = globalController.messages.putIfAbsent(
+      key,
+      () => <MessageDTO>[].obs,
+    );
+    final index = messages.indexWhere((item) => item.id == message.id);
+    if (index == -1) {
+      messages.add(message);
+    } else {
+      messages[index] = message;
+    }
+    messages.sort((a, b) => a.creationDate.compareTo(b.creationDate));
+    messages.refresh();
+    globalController.messages.refresh();
+  }
+
   void _setMessageStatus(int key, int messageId, MessageStatus status) {
     if (!globalController.messages.containsKey(key)) return;
     final msgs = globalController.messages[key]!;
@@ -203,15 +341,12 @@ class ChatController extends GetxController {
   }
 
   void markConversationAsRead() {
-    EasyLoading.show();
     if (globalController.messages.isEmpty || destinationUser.value == null) {
-      EasyLoading.dismiss();
       return;
     }
 
     final msgs = globalController.messages[destinationUser.value!.id];
     if (msgs == null) {
-      EasyLoading.dismiss();
       return;
     }
 
@@ -219,21 +354,28 @@ class ChatController extends GetxController {
     for (final m in msgs) {
       if (m.destinationUserID == globalController.authenticatedUser.value!.id &&
           m.status != MessageStatus.read) {
-        setMessageMarkAsRead(m.id);
+        unawaited(setMessageMarkAsRead(m.id));
         m.status = MessageStatus.read;
         markedMessages++;
       }
     }
+    if (markedMessages == 0) {
+      return;
+    }
+
     globalController.newMessages.remove(destinationUser.value!.id);
+    globalController.newMessages.refresh();
+    globalController.pendingConversations.value =
+        globalController.pendingConversations.value > 0
+        ? globalController.pendingConversations.value - 1
+        : 0;
+    globalController.notifyChatRead(destinationUser.value!.id);
     final remainingMessages =
         globalController.pendingMessages.value - markedMessages;
     globalController.pendingMessages.value = remainingMessages < 0
         ? 0
         : remainingMessages;
     globalController.messages.refresh();
-
-    EasyLoading.dismiss();
-    return;
   }
 
   List<MessageDTO> sortList() {
@@ -251,6 +393,108 @@ class ChatController extends GetxController {
     } catch (error) {
       Get.snackbar('Error', '$error');
     } finally {}
+  }
+
+  Future<void> markAllConversationsAsRead() async {
+    final currentUserID = globalController.authenticatedUser.value?.id;
+    if (currentUserID == null) return;
+
+    final unreadMessages = <int, int>{};
+    for (final entry in globalController.newMessages.entries) {
+      for (final message in entry.value) {
+        if (message.id > 0 && message.destinationUserID == currentUserID) {
+          unreadMessages[message.id] = entry.key;
+        }
+      }
+    }
+
+    if (unreadMessages.isEmpty) {
+      globalController.pendingMessages.value = 0;
+      Get.snackbar('Informação', 'Não existem mensagens por ler.');
+      return;
+    }
+
+    EasyLoading.show();
+    try {
+      final results = await Future.wait(
+        unreadMessages.keys.map((messageID) async {
+          final resp = await _provider.setMessageMarkAsRead(
+            messageID: messageID,
+          );
+          return MapEntry(messageID, resp['ok'] == true);
+        }),
+      );
+      final markedIDs = results
+          .where((result) => result.value)
+          .map((result) => result.key)
+          .toSet();
+
+      _setMessagesAsRead(globalController.messages, markedIDs);
+      _setMessagesAsRead(globalController.oldMessages, markedIDs);
+
+      final sendersToNotify = <int>[];
+      for (final entry in globalController.newMessages.entries.toList()) {
+        entry.value.removeWhere((message) => markedIDs.contains(message.id));
+        if (entry.value.isEmpty) {
+          globalController.newMessages.remove(entry.key);
+          sendersToNotify.add(entry.key);
+        } else {
+          entry.value.refresh();
+        }
+      }
+
+      globalController.newMessages.refresh();
+      globalController.pendingConversations.value =
+          globalController.newMessages.length;
+      globalController.messages.refresh();
+      globalController.pendingMessages.value = globalController
+          .newMessages
+          .values
+          .fold(0, (count, messages) => count + messages.length)
+          .clamp(0, 99);
+
+      for (final senderID in sendersToNotify) {
+        globalController.notifyChatRead(senderID);
+      }
+
+      if (markedIDs.length == unreadMessages.length) {
+        Get.snackbar(
+          'Sucesso',
+          'Todas as mensagens foram marcadas como lidas.',
+        );
+      } else if (markedIDs.isNotEmpty) {
+        Get.snackbar(
+          'Atenção',
+          '${markedIDs.length} de ${unreadMessages.length} mensagens foram marcadas como lidas.',
+        );
+      } else {
+        Get.snackbar(
+          'Erro',
+          'Não foi possível marcar as mensagens como lidas.',
+        );
+      }
+    } catch (error) {
+      Get.snackbar('Erro', 'Não foi possível marcar as mensagens: $error');
+    } finally {
+      EasyLoading.dismiss();
+    }
+  }
+
+  void _setMessagesAsRead(
+    RxMap<int, RxList<MessageDTO>> messagesMap,
+    Set<int> messageIDs,
+  ) {
+    if (messageIDs.isEmpty) return;
+
+    for (final messages in messagesMap.values) {
+      for (final message in messages) {
+        if (messageIDs.contains(message.id)) {
+          message.status = MessageStatus.read;
+        }
+      }
+      messages.refresh();
+    }
+    messagesMap.refresh();
   }
 
   // ────────────────────────────────

@@ -38,7 +38,7 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
 
     final globalController = GlobalController.to;
     globalController.stopTimer();
-    globalController.disconnectNotificationSocket();
+    await globalController.disconnectNotificationSocket(unregisterDevice: true);
     globalController.authenticatedUser.value = null;
     globalController.authenticatedEmployee.value = null;
     globalController.activePermissions.clear();
