@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
+import '../ui/utils/app_toast.dart';
 import '../ui/utils/custom_colors.dart';
 import 'global_controller.dart';
 
@@ -72,7 +73,7 @@ class ActivitiesController extends GetxController {
       if (await globalController.handleResponseError(response)) {
         return;
       }
-      Get.snackbar(
+      AppToast.show(
         'Erro',
         response['message']?.toString() ??
             'Não foi possível carregar as actividades.',

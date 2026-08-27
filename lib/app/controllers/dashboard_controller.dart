@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../data/providers/provider.dart';
+import '../ui/utils/app_toast.dart';
 import 'index.dart';
 
 class DashboardController extends GetxController {
@@ -65,7 +66,7 @@ class DashboardController extends GetxController {
     }
     if (response['ok'] != true) {
       loading.value = false;
-      Get.snackbar('Erro', 'Não foi possível carregar os dados do dashboard.');
+      AppToast.show('Erro', 'Não foi possível carregar os dados do dashboard.');
       return;
     }
     data.assignAll(response['data'] as Map<String, dynamic>);
@@ -88,7 +89,7 @@ class DashboardController extends GetxController {
     if (response['ok'] == true) {
       realTimeData.assignAll(response['data'] as Map<String, dynamic>);
     } else if (showError) {
-      Get.snackbar(
+      AppToast.show(
         'Erro',
         'Não foi possível carregar a monitorização de urgência.',
       );

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
 import '../data/shared/preferences.dart';
+import '../ui/utils/app_toast.dart';
 import 'index.dart';
 
 class CalendarController extends GetxController {
@@ -162,7 +163,7 @@ class CalendarController extends GetxController {
   Future<bool> reloadClients({bool showError = true}) async {
     final search = _lastClientSearch;
     if (search == null) {
-      Get.snackbar('Pesquisa', 'Introduza pelo menos 3 letras do cliente.');
+      AppToast.show('Pesquisa', 'Introduza pelo menos 3 letras do cliente.');
       return false;
     }
     return searchClients(search, showError: showError);
@@ -186,7 +187,7 @@ class CalendarController extends GetxController {
         return false;
       }
       if (showError) {
-        Get.snackbar('Erro', response['message']?.toString() ?? '');
+        AppToast.show('Erro', response['message']?.toString() ?? '');
       }
       return false;
     } finally {

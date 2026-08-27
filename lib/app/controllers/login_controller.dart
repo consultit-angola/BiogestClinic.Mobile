@@ -10,6 +10,7 @@ import '../data/models/index.dart';
 import '../data/providers/provider.dart';
 import '../data/shared/index.dart';
 import '../routes/index.dart';
+import '../ui/utils/app_toast.dart';
 import 'index.dart';
 
 class LoginController extends GetxController {
@@ -52,7 +53,7 @@ class LoginController extends GetxController {
       return resp['data'] as List<StoreDTO>;
     } else {
       EasyLoading.dismiss();
-      Get.snackbar('Error', resp['message']);
+      AppToast.show('Error', resp['message']);
       return [];
     }
   }
@@ -140,11 +141,11 @@ class LoginController extends GetxController {
           EasyLoading.dismiss();
           Get.offAllNamed(Routes.home);
         } else {
-          Get.snackbar('Error', resp['message']);
+          AppToast.show('Error', resp['message']);
         }
       } catch (error) {
         await globalController.clearSession();
-        Get.snackbar('Error', '$error');
+        AppToast.show('Error', '$error');
         log('Error: $error');
       } finally {
         EasyLoading.dismiss();

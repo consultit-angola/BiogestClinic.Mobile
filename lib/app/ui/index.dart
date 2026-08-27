@@ -16,3 +16,4 @@ export 'pages/login/login_page.dart';
 export 'pages/splash/splash_page.dart';
 export 'utils/custom_colors.dart';
 export 'utils/custom_formats.dart';
+export 'utils/app_toast.dart';

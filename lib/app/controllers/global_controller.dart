@@ -11,6 +11,7 @@ import '../data/services/notification_socket_service.dart';
 import '../data/services/push_notification_service.dart';
 import '../data/shared/index.dart';
 import '../routes/app_routes.dart';
+import '../ui/utils/app_toast.dart';
 import 'index.dart';
 
 class GlobalController extends GetxController {
@@ -125,7 +126,7 @@ class GlobalController extends GetxController {
     if (!_timersStoppedByConnection) {
       _timersStoppedByConnection = true;
       stopTimer();
-      Get.snackbar(
+      AppToast.show(
         'Erro de conexão',
         'As atualizações automáticas foram interrompidas.',
       );
@@ -144,7 +145,7 @@ class GlobalController extends GetxController {
       Get.offAllNamed(Routes.login);
       await Future<void>.delayed(Get.defaultTransitionDuration);
       await clearSession(clearPreferences: true);
-      Get.snackbar(
+      AppToast.show(
         'Sessão terminada',
         'A sua sessão foi encerrada noutro dispositivo.',
       );
@@ -473,12 +474,12 @@ class GlobalController extends GetxController {
         await Future<void>.delayed(Get.defaultTransitionDuration);
         await clearSession(clearPreferences: true);
       } else {
-        Get.snackbar('Error', resp['message']);
+        AppToast.show('Error', resp['message']);
       }
       EasyLoading.dismiss();
     } catch (error) {
       EasyLoading.dismiss();
-      Get.snackbar('Error', '$error');
+      AppToast.show('Error', '$error');
     }
   }
 
@@ -577,7 +578,7 @@ class GlobalController extends GetxController {
         mainList.refresh();
       }
     } else {
-      Get.snackbar('Error', resp['message'] ?? 'Erro não identificado');
+      AppToast.show('Error', resp['message'] ?? 'Erro não identificado');
     }
   }
 
@@ -633,7 +634,7 @@ class GlobalController extends GetxController {
         if (value['length'] > 0) pendingAlarms.value++;
       });
     } else {
-      Get.snackbar('Error', resp['message']);
+      AppToast.show('Error', resp['message']);
     }
   }
 
@@ -661,10 +662,10 @@ class GlobalController extends GetxController {
         };
         await getActiveInstances();
       } else {
-        Get.snackbar('Error', resp['message']);
+        AppToast.show('Error', resp['message']);
       }
     } catch (error) {
-      Get.snackbar('Error', '$error');
+      AppToast.show('Error', '$error');
     }
   }
 
@@ -750,7 +751,7 @@ class GlobalController extends GetxController {
         );
       }
     } else {
-      Get.snackbar('Error', resp['message']);
+      AppToast.show('Error', resp['message']);
     }
   }
 }

@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
 import '../routes/index.dart';
+import '../ui/utils/app_toast.dart';
 import 'index.dart';
 
 class ChatController extends GetxController {
@@ -107,10 +108,10 @@ class ChatController extends GetxController {
       if (resp['ok']) {
         globalController.users.value = resp['data'] as List<UserDTO>;
       } else {
-        Get.snackbar('Error', resp['message']);
+        AppToast.show('Error', resp['message']);
       }
     } catch (error) {
-      Get.snackbar('Error', '$error');
+      AppToast.show('Error', '$error');
     } finally {
       if (showLoading) EasyLoading.dismiss();
     }
@@ -210,20 +211,20 @@ class ChatController extends GetxController {
 
       final sentCount = results.where((sent) => sent).length;
       if (sentCount == users.length) {
-        Get.snackbar(
+        AppToast.show(
           'Sucesso',
           'Mensagem de difusão enviada para $sentCount utilizadores.',
         );
       } else if (sentCount > 0) {
-        Get.snackbar(
+        AppToast.show(
           'Atenção',
           'Mensagem enviada para $sentCount de ${users.length} utilizadores.',
         );
       } else {
-        Get.snackbar('Erro', 'Não foi possível enviar a mensagem de difusão.');
+        AppToast.show('Erro', 'Não foi possível enviar a mensagem de difusão.');
       }
     } catch (error) {
-      Get.snackbar('Erro', 'Não foi possível enviar a mensagem: $error');
+      AppToast.show('Erro', 'Não foi possível enviar a mensagem: $error');
     } finally {
       EasyLoading.dismiss();
     }
@@ -248,14 +249,17 @@ class ChatController extends GetxController {
       }
 
       if (selected.isEmpty) {
-        Get.snackbar('Erro', 'Não foi possível ler os ficheiros selecionados.');
+        AppToast.show(
+          'Erro',
+          'Não foi possível ler os ficheiros selecionados.',
+        );
         return;
       }
 
       attachments.assignAll(selected);
       await sendMessage();
     } catch (error) {
-      Get.snackbar('Erro', 'Não foi possível anexar o ficheiro: $error');
+      AppToast.show('Erro', 'Não foi possível anexar o ficheiro: $error');
     }
   }
 
@@ -271,10 +275,10 @@ class ChatController extends GetxController {
 
       final result = await OpenFilex.open(file.path);
       if (result.type != ResultType.done) {
-        Get.snackbar('Erro', result.message);
+        AppToast.show('Erro', result.message);
       }
     } catch (error) {
-      Get.snackbar('Erro', 'Não foi possível abrir o ficheiro: $error');
+      AppToast.show('Erro', 'Não foi possível abrir o ficheiro: $error');
     }
   }
 
@@ -388,10 +392,10 @@ class ChatController extends GetxController {
     try {
       final resp = await _provider.setMessageMarkAsRead(messageID: messageID);
       if (!resp['ok']) {
-        Get.snackbar('Error', resp['message']);
+        AppToast.show('Error', resp['message']);
       }
     } catch (error) {
-      Get.snackbar('Error', '$error');
+      AppToast.show('Error', '$error');
     } finally {}
   }
 
@@ -410,7 +414,7 @@ class ChatController extends GetxController {
 
     if (unreadMessages.isEmpty) {
       globalController.pendingMessages.value = 0;
-      Get.snackbar('Informação', 'Não existem mensagens por ler.');
+      AppToast.show('Informação', 'Não existem mensagens por ler.');
       return;
     }
 
@@ -458,23 +462,23 @@ class ChatController extends GetxController {
       }
 
       if (markedIDs.length == unreadMessages.length) {
-        Get.snackbar(
+        AppToast.show(
           'Sucesso',
           'Todas as mensagens foram marcadas como lidas.',
         );
       } else if (markedIDs.isNotEmpty) {
-        Get.snackbar(
+        AppToast.show(
           'Atenção',
           '${markedIDs.length} de ${unreadMessages.length} mensagens foram marcadas como lidas.',
         );
       } else {
-        Get.snackbar(
+        AppToast.show(
           'Erro',
           'Não foi possível marcar as mensagens como lidas.',
         );
       }
     } catch (error) {
-      Get.snackbar('Erro', 'Não foi possível marcar as mensagens: $error');
+      AppToast.show('Erro', 'Não foi possível marcar as mensagens: $error');
     } finally {
       EasyLoading.dismiss();
     }

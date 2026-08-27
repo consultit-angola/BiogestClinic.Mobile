@@ -30,7 +30,7 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
 
     final previousApiName = ApiConfig.activeApiName;
     if (_selectedApiName == previousApiName) {
-      Get.snackbar('Informação', 'A API selecionada já está ativa');
+      AppToast.show('Informação', 'A API selecionada já está ativa');
       return;
     }
 
@@ -51,7 +51,7 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
       return;
     }
 
-    Get.snackbar(
+    AppToast.show(
       'Sucesso',
       'API alterada para $_selectedApiName. Inicie sessão novamente.',
     );

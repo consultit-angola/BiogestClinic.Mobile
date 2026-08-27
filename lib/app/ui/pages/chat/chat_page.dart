@@ -278,7 +278,7 @@ class ChatPage extends GetView<ChatController> {
     if (!context.mounted) return;
 
     if (chatController.globalController.users.isEmpty) {
-      Get.snackbar('Informação', 'Não existem utilizadores disponíveis.');
+      AppToast.show('Informação', 'Não existem utilizadores disponíveis.');
       return;
     }
 
