@@ -40,11 +40,8 @@ Future<void> pushNotificationBackgroundHandler(RemoteMessage message) async {
     await dotenv.load(fileName: '.env');
   }
 
-  final options = FirebaseEnvironmentOptions.fromEnvironment();
-  if (options == null) return;
-
   if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: options);
+    await PushNotificationService.initializeFirebaseApp();
   }
 }
 
@@ -66,6 +63,16 @@ class PushNotificationService {
       ? FirebaseMessaging.instance.onTokenRefresh
       : const Stream<String>.empty();
 
+  static Future<void> initializeFirebaseApp() async {
+    final options = FirebaseEnvironmentOptions.fromEnvironment();
+    if (options == null) {
+      await Firebase.initializeApp();
+      return;
+    }
+
+    await Firebase.initializeApp(options: options);
+  }
+
   Future<bool> initialize() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return false;
@@ -73,17 +80,9 @@ class PushNotificationService {
 
     await _initializeLocalNotifications();
 
-    final options = FirebaseEnvironmentOptions.fromEnvironment();
-    if (options == null) {
-      debugPrint(
-        'Firebase Cloud Messaging is disabled because its environment variables are incomplete.',
-      );
-      return false;
-    }
-
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(options: options);
+        await initializeFirebaseApp();
       }
       FirebaseMessaging.onBackgroundMessage(pushNotificationBackgroundHandler);
       _isEnabled = true;

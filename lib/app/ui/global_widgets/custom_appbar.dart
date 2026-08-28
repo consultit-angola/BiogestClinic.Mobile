@@ -43,6 +43,7 @@ class _AuthenticatedHeaderState extends State<_AuthenticatedHeader> {
   @override
   Widget build(BuildContext context) {
     final globalController = GlobalController.to;
+    final customMenuController = CustomMenuController.to;
     return Container(
       height: 66,
       color: CustomColors.primaryDarkerColor,
@@ -106,6 +107,7 @@ class _AuthenticatedHeaderState extends State<_AuthenticatedHeader> {
             IconButton(
               tooltip: 'Chat',
               onPressed: () {
+                customMenuController.selectedPosItem.value = -1;
                 if (Get.isRegistered<ChatController>()) {
                   ChatController.to.openPendingConversationOrChat();
                   return;
@@ -121,7 +123,10 @@ class _AuthenticatedHeaderState extends State<_AuthenticatedHeader> {
             if (globalController.canAccessAlarms)
               IconButton(
                 tooltip: 'Alarmes',
-                onPressed: () => Get.toNamed(Routes.alarm),
+                onPressed: () {
+                  customMenuController.selectedPosItem.value = -1;
+                  Get.toNamed(Routes.alarm);
+                },
                 icon: _HeaderIconWithBadge(
                   icon: Icons.notifications_none,
                   count: globalController.pendingAlarms.value,

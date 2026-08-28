@@ -24,15 +24,18 @@ FIREBASE_PROJECT_ID=project-id
     expect(options.projectId, 'project-id');
   });
 
-  test('disables Firebase when an environment value is missing', () {
-    dotenv.loadFromString(
-      envString: '''
+  test(
+    'does not create Firebase options when an environment value is missing',
+    () {
+      dotenv.loadFromString(
+        envString: '''
 FIREBASE_API_KEY=api-key
 FIREBASE_APP_ID=app-id
 FIREBASE_MESSAGING_SENDER_ID=sender-id
 ''',
-    );
+      );
 
-    expect(FirebaseEnvironmentOptions.fromEnvironment(), isNull);
-  });
+      expect(FirebaseEnvironmentOptions.fromEnvironment(), isNull);
+    },
+  );
 }
