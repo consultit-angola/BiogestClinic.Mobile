@@ -43,16 +43,16 @@ Widget customMenu({bool alignBottom = true}) {
               Routes.dashboard,
               visible: controller.globalController.canAccessDashboard,
             ),
-            Expanded(
-              child: InkWell(
-                onTap: controller.openMoreMenu,
-                child: const _MenuContent(
-                  icon: Icons.more_horiz,
-                  label: 'Mais',
-                  selected: false,
-                ),
-              ),
-            ),
+            // Expanded(
+            //   child: InkWell(
+            //     onTap: controller.openMoreMenu,
+            //     child: const _MenuContent(
+            //       icon: Icons.more_horiz,
+            //       label: 'Mais',
+            //       selected: false,
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

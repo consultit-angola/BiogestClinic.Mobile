@@ -415,6 +415,8 @@ class GlobalController extends GetxController {
   void stopTimer() {
     timerAlarms?.cancel();
     timerAppts?.cancel();
+    timerAlarms = null;
+    timerAppts = null;
   }
 
   Future<void> clearSession({bool clearPreferences = false}) async {
@@ -508,15 +510,45 @@ class GlobalController extends GetxController {
 
     if (resp['ok']) {
       var auxMessages = resp['data'] as List<MessageDTO>;
+      final currentUserID = authenticatedUser.value!.id;
+      final activeConversationUserID = _activeConversationUserID;
+      final visibleUnreadMessages = onlyUnread
+          ? auxMessages
+                .where(
+                  (message) => isMessageFromActiveConversation(
+                    message,
+                    currentUserID,
+                    activeConversationUserID,
+                  ),
+                )
+                .toList()
+          : <MessageDTO>[];
 
       // Update the pending message counter
       if (onlyUnread) {
-        pendingMessages.value = auxMessages.length <= 99
-            ? auxMessages.length
+        if (visibleUnreadMessages.isNotEmpty &&
+            activeConversationUserID != null) {
+          for (final message in visibleUnreadMessages) {
+            message.status = MessageStatus.read;
+            if (message.id > 0) {
+              unawaited(_provider.setMessageMarkAsRead(messageID: message.id));
+            }
+          }
+          newMessages.remove(activeConversationUserID);
+          newMessages.refresh();
+          notifyChatRead(activeConversationUserID);
+        }
+
+        final pendingUnreadMessages = unreadMessagesOutsideActiveConversation(
+          auxMessages,
+          currentUserID,
+          activeConversationUserID: activeConversationUserID,
+        );
+        pendingMessages.value = pendingUnreadMessages.length <= 99
+            ? pendingUnreadMessages.length
             : 99;
 
-        final currentUserID = authenticatedUser.value!.id;
-        final senderIDs = auxMessages
+        final senderIDs = pendingUnreadMessages
             .where((message) => message.destinationUserID == currentUserID)
             .map((message) => message.creationUserID)
             .toSet();
@@ -537,9 +569,18 @@ class GlobalController extends GetxController {
         final key = message.destinationUserID == authenticatedUser.value!.id
             ? message.creationUserID
             : message.destinationUserID;
+        final isVisibleUnreadMessage =
+            onlyUnread &&
+            isMessageFromActiveConversation(
+              message,
+              currentUserID,
+              activeConversationUserID,
+            );
 
         // Ensure the list exists in the old/new map
-        final targetMap = onlyUnread ? newMessages : oldMessages;
+        final targetMap = onlyUnread && !isVisibleUnreadMessage
+            ? newMessages
+            : oldMessages;
         final existing = targetMap.putIfAbsent(key, () => <MessageDTO>[].obs);
 
         // Update an existing message when its status or text changes
@@ -588,6 +629,41 @@ class GlobalController extends GetxController {
       if (a[i].id != b[i].id || a[i].status != b[i].status) return false;
     }
     return true;
+  }
+
+  List<MessageDTO> unreadMessagesOutsideActiveConversation(
+    List<MessageDTO> unreadMessages,
+    int currentUserID, {
+    int? activeConversationUserID,
+  }) {
+    return unreadMessages
+        .where(
+          (message) => !isMessageFromActiveConversation(
+            message,
+            currentUserID,
+            activeConversationUserID ?? _activeConversationUserID,
+          ),
+        )
+        .toList();
+  }
+
+  bool isMessageFromActiveConversation(
+    MessageDTO message,
+    int currentUserID,
+    int? activeConversationUserID,
+  ) {
+    return activeConversationUserID != null &&
+        message.destinationUserID == currentUserID &&
+        message.creationUserID == activeConversationUserID;
+  }
+
+  int? get _activeConversationUserID {
+    if (Get.currentRoute != Routes.chatDetails ||
+        !Get.isRegistered<ChatController>()) {
+      return null;
+    }
+
+    return ChatController.to.destinationUser.value?.id;
   }
 
   Future<void> getActiveInstances() async {

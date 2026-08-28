@@ -69,6 +69,24 @@ void main() {
       );
       expect(globalController.mergedListEquals([first], []), isFalse);
     });
+
+    test('ignores unread messages from the active conversation', () {
+      final activeMessage = _message(1, 'Aberta');
+      final otherMessage = _message(2, 'Outra', creationUserID: 3);
+
+      final pendingMessages = globalController
+          .unreadMessagesOutsideActiveConversation(
+            [activeMessage, otherMessage],
+            2,
+            activeConversationUserID: 1,
+          );
+
+      expect(pendingMessages, [otherMessage]);
+      expect(
+        globalController.isMessageFromActiveConversation(activeMessage, 2, 1),
+        isTrue,
+      );
+    });
   });
 
   group('HomeController', () {
@@ -226,13 +244,18 @@ void main() {
   });
 }
 
-MessageDTO _message(int id, String text) {
+MessageDTO _message(
+  int id,
+  String text, {
+  int creationUserID = 1,
+  int destinationUserID = 2,
+}) {
   return MessageDTO(
     id: id,
     messageText: text,
     creationDate: DateTime.utc(2026, 8, 6),
-    creationUserID: 1,
-    destinationUserID: 2,
+    creationUserID: creationUserID,
+    destinationUserID: destinationUserID,
     attachments: const [],
   );
 }

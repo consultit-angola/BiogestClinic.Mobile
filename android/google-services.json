@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "443211762202",
+    "project_id": "biogest-clinic",
+    "storage_bucket": "biogest-clinic.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:443211762202:android:9e572fbbbe847358c59fa3",
+        "android_client_info": {
+          "package_name": "com.consultitangola.biogestclinic.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmVZ43QCxCOayQxHIt0gFl_6LEkkagTTs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
