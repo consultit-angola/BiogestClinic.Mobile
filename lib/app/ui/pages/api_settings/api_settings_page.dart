@@ -45,7 +45,6 @@ class _ApiSettingsPageState extends State<ApiSettingsPage> {
     globalController.isAuthenticated.value = false;
 
     await Preferences().clear();
-    Preferences().skipSplash = false;
 
     if (!mounted) {
       return;

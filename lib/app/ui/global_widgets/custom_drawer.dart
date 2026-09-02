@@ -101,7 +101,6 @@ Widget customDrawer() {
                   () async {
                     Get.back();
                     await Preferences().clear();
-                    Preferences().skipSplash = false;
                     Get.offAllNamed(Routes.splash);
                   },
                 ),
