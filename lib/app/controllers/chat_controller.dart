@@ -29,6 +29,7 @@ class ChatController extends GetxController {
 
   final destinationUser = Rxn<UserDTO>();
   final attachments = <AttachmentDTO>[].obs;
+  int? _loadingConversationUserID;
 
   void clearConversationSearch() {
     searchController.clear();
@@ -67,7 +68,53 @@ class ChatController extends GetxController {
     if (markAsRead) {
       markConversationAsRead();
     }
-    Get.toNamed(Routes.chatDetails);
+    Get.toNamed(Routes.chatDetails, arguments: {'userID': user.id});
+  }
+
+  Future<void> openConversationByID(
+    int userID, {
+    bool markAsRead = false,
+  }) async {
+    if (userID <= 0) return;
+    if (_loadingConversationUserID == userID) return;
+
+    _loadingConversationUserID = userID;
+    try {
+      var user = globalController.users.firstWhereOrNull(
+        (user) => user.id == userID,
+      );
+      if (user == null) {
+        await getUsers(forceReload: true, showLoading: false);
+        user = globalController.users.firstWhereOrNull(
+          (user) => user.id == userID,
+        );
+      }
+
+      user ??= UserDTO(
+        id: userID,
+        login: '',
+        name: '',
+        email: '',
+        phone: '',
+        deleted: false,
+        groupId: 0,
+        shortName: '',
+        groupName: '',
+      );
+
+      destinationUser.value = user;
+      await globalController.getMessages(onlyUnread: false, userID: userID);
+      if (markAsRead) {
+        markConversationAsRead();
+      }
+    } finally {
+      _loadingConversationUserID = null;
+    }
+  }
+
+  Future<void> loadRouteConversationIfNeeded(int userID) async {
+    if (destinationUser.value?.id == userID) return;
+    await openConversationByID(userID, markAsRead: true);
   }
 
   UserDTO? _singlePendingConversationUser() {
@@ -383,7 +430,10 @@ class ChatController extends GetxController {
   }
 
   List<MessageDTO> sortList() {
-    final list = [...?globalController.messages[destinationUser.value?.id]];
+    final userID = destinationUser.value?.id;
+    if (userID == null) return [];
+
+    final list = [...?globalController.messages[userID]];
     list.sort((a, b) => a.creationDate.compareTo(b.creationDate));
     return list;
   }

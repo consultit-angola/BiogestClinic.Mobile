@@ -1,5 +1,15 @@
 import 'index.dart';
 
+List<int> _readIntList(dynamic value) {
+  return (value as List?)
+          ?.map(
+            (item) => item is int ? item : int.tryParse(item?.toString() ?? ''),
+          )
+          .whereType<int>()
+          .toList() ??
+      [];
+}
+
 class AlarmInstanceDTO {
   final int? id;
   final String? date;
@@ -56,9 +66,7 @@ class AlarmInstanceDTO {
       alarmId: json['AlarmID'] as int?,
       isNotification: json['IsNotification'] as bool?,
       isNotificationRepeat: json['IsNotificationRepeat'] as bool?,
-      userToNotifyIds: (json['UserToNotifyIDs'] as List?)
-          ?.map((e) => e as int)
-          .toList(),
+      userToNotifyIds: _readIntList(json['UserToNotifyIDs']),
     );
   }
 

@@ -1,5 +1,15 @@
 import 'index.dart';
 
+List<int> _readIntList(dynamic value) {
+  return (value as List?)
+          ?.map(
+            (item) => item is int ? item : int.tryParse(item?.toString() ?? ''),
+          )
+          .whereType<int>()
+          .toList() ??
+      [];
+}
+
 class EmployeeDTO {
   final int id;
   final String name;
@@ -108,16 +118,12 @@ class EmployeeDTO {
     contractStartDate: json['ContractStartDate'] ?? '',
     contractEndDate: json['ContractEndDate'] ?? '',
     room: RoomDTO.fromJson(json['Room'] ?? {}),
-    appointmentExecutionSpecialties:
-        (json['AppointmentExecutionSpecalties'] as List?)
-            ?.map((e) => e as int)
-            .toList() ??
-        [],
-    appointmentVisualizationSpecialties:
-        (json['AppointmentVisualizationSpecalties'] as List?)
-            ?.map((e) => e as int)
-            .toList() ??
-        [],
+    appointmentExecutionSpecialties: _readIntList(
+      json['AppointmentExecutionSpecalties'],
+    ),
+    appointmentVisualizationSpecialties: _readIntList(
+      json['AppointmentVisualizationSpecalties'],
+    ),
     allowedAppointmentExecutionSpecialties:
         (json['AllowedAppointmentExecutionSpecialties'] as List?)
             ?.map((e) => SpecialtyDTO.fromJson(e))

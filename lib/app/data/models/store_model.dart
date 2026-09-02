@@ -1,5 +1,15 @@
 import 'dart:convert';
 
+List<int> _readIntList(dynamic value) {
+  return (value as List?)
+          ?.map(
+            (item) => item is int ? item : int.tryParse(item?.toString() ?? ''),
+          )
+          .whereType<int>()
+          .toList() ??
+      [];
+}
+
 class StoreDTO {
   final int id;
   final String name;
@@ -83,7 +93,7 @@ class StoreExtendedDataDTO {
         address: json['Address'] ?? '',
         location: json['Location'] ?? '',
         contacts: json['Contacts'] ?? '',
-        consumptionStockIDs: List<int>.from(json['ConsumptionStockIDs'] ?? []),
+        consumptionStockIDs: _readIntList(json['ConsumptionStockIDs']),
         doctorsRoundTime: json['DoctorsRoundTime'] ?? '',
       );
 
@@ -116,11 +126,7 @@ class ExtendedDataDTO {
         address: json["Address"] ?? "",
         location: json["Location"] ?? "",
         contacts: json["Contacts"] ?? "",
-        consumptionStockIDs:
-            (json["ConsumptionStockIDs"] as List?)
-                ?.map((e) => e as int)
-                .toList() ??
-            [],
+        consumptionStockIDs: _readIntList(json["ConsumptionStockIDs"]),
         doctorsRoundTime: json["DoctorsRoundTime"] ?? "",
       );
 

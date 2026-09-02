@@ -8,6 +8,8 @@ import '../../index.dart';
 class UserPage extends GetView<UserController> {
   const UserPage({super.key});
 
+  static const int _profileTabCount = 3;
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<UserController>(
@@ -52,57 +54,117 @@ class UserPage extends GetView<UserController> {
           children: [
             _buildHeader(displayName, user.groupName, initial),
             const SizedBox(height: 24),
-            const _SectionTitle('Dados pessoais'),
-            const SizedBox(height: 10),
-            _buildInfoCard([
-              _ProfileItem(Icons.person_outline, 'Nome', user.name),
-              _ProfileItem(Icons.badge_outlined, 'Utilizador', user.login),
-              _ProfileItem(Icons.email_outlined, 'E-mail', user.email),
-              _ProfileItem(Icons.phone_outlined, 'Telefone', user.phone),
-              _ProfileItem(Icons.groups_outlined, 'Grupo', user.groupName),
-            ]),
-            if (hasAssociatedEmployee) ...[
-              const SizedBox(height: 22),
-              const _SectionTitle('Dados profissionais'),
-              const SizedBox(height: 10),
-              _buildProfessionalInfo(employee),
-            ],
-            const SizedBox(height: 22),
-            const _SectionTitle('Locales associados'),
-            const SizedBox(height: 10),
-            _buildStores(userController),
+            DefaultTabController(
+              length: _profileTabCount,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildProfileTabs(),
+                  const SizedBox(height: 12),
+                  Obx(() {
+                    final personalInfo = [
+                      _ProfileItem(Icons.person_outline, 'Nome', user.name),
+                      _ProfileItem(
+                        Icons.badge_outlined,
+                        'Utilizador',
+                        user.login,
+                      ),
+                      _ProfileItem(Icons.email_outlined, 'E-mail', user.email),
+                      _ProfileItem(
+                        Icons.phone_outlined,
+                        'Telefone',
+                        user.phone,
+                      ),
+                      _ProfileItem(
+                        Icons.groups_outlined,
+                        'Grupo',
+                        user.groupName,
+                      ),
+                    ];
+
+                    if (hasAssociatedEmployee) {
+                      personalInfo.add(
+                        _ProfileItem(
+                          Icons.medical_services_outlined,
+                          'Médico',
+                          employee.shortName.trim().isNotEmpty
+                              ? employee.shortName
+                              : employee.name,
+                        ),
+                      );
+                    }
+
+                    return SizedBox(
+                      height: Get.height * 0.56,
+                      child: TabBarView(
+                        children: [
+                          _buildPersonalInfo(personalInfo, userController),
+                          _buildProfessionalInfo(employee),
+                          _buildStores(userController),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfessionalInfo(EmployeeDTO employee) {
-    final employeeName = employee.shortName.trim().isNotEmpty
-        ? employee.shortName
-        : employee.name;
-    final specialtyNames = employee.allowedAppointmentExecutionSpecialties
-        .map((specialty) => specialty.name.trim())
-        .where((name) => name.isNotEmpty)
-        .toSet()
-        .toList();
-
-    return _buildInfoCard([
-      _ProfileItem(Icons.medical_services_outlined, 'Médico', employeeName),
-      ...specialtyNames.map(
-        (name) => _ProfileItem(
-          Icons.health_and_safety_outlined,
-          'Especialidade',
-          name,
-        ),
+  Widget _buildProfileTabs() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: CustomColors.surfaceColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: CustomColors.borderColor),
       ),
-      if (specialtyNames.isEmpty)
-        const _ProfileItem(
-          Icons.health_and_safety_outlined,
-          'Especialidades',
-          'Nenhuma especialidade associada',
+      child: TabBar(
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              CustomColors.primaryDarkerColor,
+              CustomColors.secondaryColor,
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(10),
         ),
-    ]);
+        dividerColor: Colors.transparent,
+        labelColor: Colors.white,
+        unselectedLabelColor: CustomColors.primaryDarkerColor,
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+        tabs: const [
+          Tab(icon: Icon(Icons.person_outline, size: 18), text: 'Dados'),
+          Tab(
+            icon: Icon(Icons.health_and_safety_outlined, size: 18),
+            text: 'Especialidades',
+          ),
+          Tab(icon: Icon(Icons.business_outlined, size: 18), text: 'Locais'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalInfo(
+    List<_ProfileItem> personalInfo,
+    UserController userController,
+  ) {
+    return _buildTabContent(
+      child: _buildInfoCard(
+        personalInfo,
+        scrollController: userController.personalInfoScrollController,
+      ),
+    );
   }
 
   Widget _buildHeader(String name, String groupName, String initial) {
@@ -172,81 +234,149 @@ class UserPage extends GetView<UserController> {
     );
   }
 
-  Widget _buildInfoCard(List<_ProfileItem> items) {
+  Widget _buildInfoCard(
+    List<_ProfileItem> items, {
+    ScrollController? scrollController,
+    bool? withFilter,
+  }) {
+    final content = Column(children: _buildInfoRows(items));
+
     return Container(
       decoration: BoxDecoration(
         color: CustomColors.surfaceColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: CustomColors.borderColor),
       ),
-      child: Column(
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: CustomColors.blueLightColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        item.icon,
-                        color: CustomColors.secondaryColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 13),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.label,
-                            style: const TextStyle(
-                              color: CustomColors.mutedTextColor,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.value.trim().isEmpty
-                                ? 'Não informado'
-                                : item.value,
-                            style: const TextStyle(
-                              color: CustomColors.textColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+      child: scrollController == null
+          ? content
+          : ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: Get.height * ((withFilter ?? false) ? 0.44 : 0.515),
+              ),
+              child: Scrollbar(
+                controller: scrollController,
+                thumbVisibility: true,
+                trackVisibility: true,
+                radius: const Radius.circular(8),
+                thickness: 4,
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.only(right: 8),
+                  child: content,
                 ),
               ),
-              if (index < items.length - 1)
-                const Divider(height: 1, indent: 67),
-            ],
-          );
-        }),
+            ),
+    );
+  }
+
+  List<Widget> _buildInfoRows(List<_ProfileItem> items) {
+    return List.generate(items.length, (index) {
+      final item = items[index];
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: CustomColors.blueLightColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    color: CustomColors.secondaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (item.hasLabel) ...[
+                        SizedBox(height: Get.height * 0.01),
+                        Text(
+                          item.label!,
+                          style: const TextStyle(
+                            color: CustomColors.mutedTextColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: Get.height * 0.01),
+                      Text(
+                        item.value.trim().isEmpty
+                            ? 'Não informado'
+                            : item.value,
+                        style: const TextStyle(
+                          color: CustomColors.textColor,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (index < items.length - 1) const Divider(height: 1, indent: 67),
+        ],
+      );
+    });
+  }
+
+  Widget _buildProfessionalInfo(EmployeeDTO? employee) {
+    final specialtyNames =
+        employee?.allowedAppointmentExecutionSpecialties
+            .map((specialty) => specialty.name.trim())
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList() ??
+        [];
+    final filteredSpecialtyNames = _filterValues(
+      specialtyNames,
+      controller.specialtyFilter.value,
+    );
+
+    return _buildTabContent(
+      filter: _buildFilterField(
+        textController: controller.specialtyFilterController,
+        hintText: 'Filtrar especialidades',
+        hasValue: controller.specialtyFilter.value.isNotEmpty,
+        onChanged: controller.setSpecialtyFilter,
+        onClear: controller.clearSpecialtyFilter,
       ),
+      child: specialtyNames.isEmpty
+          ? _storeStatus(const Text('Nenhuma especialidade associada.'))
+          : filteredSpecialtyNames.isEmpty
+          ? _storeStatus(const Text('Nenhuma especialidade encontrada.'))
+          : _buildInfoCard(
+              filteredSpecialtyNames
+                  .map(
+                    (name) => _ProfileItem(
+                      Icons.health_and_safety_outlined,
+                      null,
+                      name,
+                    ),
+                  )
+                  .toList(),
+              scrollController: controller.specialtyScrollController,
+              withFilter: true,
+            ),
     );
   }
 
   Widget _buildStores(UserController userController) {
     if (userController.isLoadingStores) {
-      return const _StoreStatus(
-        child: SizedBox(
+      return _storeStatus(
+        SizedBox(
           width: 22,
           height: 22,
           child: CircularProgressIndicator(strokeWidth: 2.5),
@@ -255,10 +385,10 @@ class UserPage extends GetView<UserController> {
     }
 
     if (userController.hasStoreError) {
-      return _StoreStatus(
-        child: Column(
+      return _storeStatus(
+        Column(
           children: [
-            const Text('Não foi possível carregar os locales.'),
+            const Text('Não foi possível carregar os locais.'),
             TextButton(
               onPressed: userController.loadStores,
               child: const Text('Tentar novamente'),
@@ -270,50 +400,98 @@ class UserPage extends GetView<UserController> {
 
     final storeNames = userController.userStoreNames;
     if (storeNames.isEmpty) {
-      return const _StoreStatus(child: Text('Nenhum local associado.'));
+      return _storeStatus(Text('Nenhum local associado.'));
     }
+    final filteredStoreNames = userController.filteredUserStoreNames;
 
-    return _buildInfoCard(
-      storeNames
-          .map((name) => _ProfileItem(Icons.business_outlined, 'Local', name))
-          .toList(),
+    return _buildTabContent(
+      filter: _buildFilterField(
+        textController: userController.storeFilterController,
+        hintText: 'Filtrar locais',
+        hasValue: userController.storeFilter.value.isNotEmpty,
+        onChanged: userController.setStoreFilter,
+        onClear: userController.clearStoreFilter,
+      ),
+      child: filteredStoreNames.isEmpty
+          ? _storeStatus(const Text('Nenhum local encontrado.'))
+          : _buildInfoCard(
+              filteredStoreNames
+                  .map(
+                    (name) => _ProfileItem(Icons.business_outlined, null, name),
+                  )
+                  .toList(),
+              scrollController: userController.storeScrollController,
+              withFilter: true,
+            ),
     );
   }
-}
 
-class _ProfileItem {
-  final IconData icon;
-  final String label;
-  final String value;
+  Widget _buildTabContent({Widget? filter, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (filter != null) ...[filter, const SizedBox(height: 12)],
+        child,
+      ],
+    );
+  }
 
-  const _ProfileItem(this.icon, this.label, this.value);
-}
+  List<String> _filterValues(List<String> values, String filter) {
+    final normalizedFilter = filter.trim().toLowerCase();
+    if (normalizedFilter.isEmpty) {
+      return values;
+    }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
+    return values
+        .where((value) => value.toLowerCase().contains(normalizedFilter))
+        .toList();
+  }
 
-  const _SectionTitle(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: CustomColors.textColor,
-        fontSize: 17,
-        fontWeight: FontWeight.bold,
+  Widget _buildFilterField({
+    required TextEditingController textController,
+    required String hintText,
+    required bool hasValue,
+    required ValueChanged<String> onChanged,
+    required VoidCallback onClear,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CustomColors.surfaceColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: CustomColors.borderColor),
+      ),
+      child: TextField(
+        controller: textController,
+        cursorColor: CustomColors.primaryColor,
+        onChanged: onChanged,
+        style: const TextStyle(color: CustomColors.textColor, fontSize: 16),
+        decoration: InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+          hintText: hintText,
+          hintStyle: const TextStyle(
+            color: CustomColors.mutedTextColor,
+            fontSize: 15,
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            color: CustomColors.primaryDarkerColor,
+            size: 20,
+          ),
+          suffixIcon: hasValue
+              ? IconButton(
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close, size: 20),
+                  color: CustomColors.mutedTextColor,
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
       ),
     );
   }
-}
 
-class _StoreStatus extends StatelessWidget {
-  final Widget child;
-
-  const _StoreStatus({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _storeStatus(Widget child) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -330,4 +508,14 @@ class _StoreStatus extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ProfileItem {
+  final IconData icon;
+  final String? label;
+  final String value;
+
+  const _ProfileItem(this.icon, this.label, this.value);
+
+  bool get hasLabel => label?.trim().isNotEmpty == true;
 }

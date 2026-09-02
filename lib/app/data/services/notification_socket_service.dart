@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
@@ -54,9 +55,9 @@ class NotificationSocketService {
     final socket = io.io(
       ApiConfig.socketServerUrl,
       io.OptionBuilder()
-          .setPath('/socket.io')
+          .setPath('/socket.io/')
           .setAuth({'token': serverSecret})
-          .setTransports(['polling', 'websocket'])
+          .setTransports(['websocket'])
           .disableAutoConnect()
           .enableReconnection()
           .build(),
@@ -78,6 +79,18 @@ class NotificationSocketService {
 
     socket.on('message-received-by-user', (data) {
       _onMessageReceivedByUser?.call(MessageReceivedByUserEvent.fromData(data));
+    });
+
+    socket.onConnectError((error) {
+      debugPrint('Socket connect_error: $error');
+    });
+
+    socket.onError((error) {
+      debugPrint('Socket error: $error');
+    });
+
+    socket.onDisconnect((reason) {
+      debugPrint('Socket disconnected: $reason');
     });
 
     socket.connect();

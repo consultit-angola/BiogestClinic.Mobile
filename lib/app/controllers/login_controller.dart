@@ -140,6 +140,8 @@ class LoginController extends GetxController {
 
           EasyLoading.dismiss();
           Get.offAllNamed(Routes.home);
+          await Future<void>.delayed(Get.defaultTransitionDuration);
+          await globalController.openInitialPushNotificationConversation();
         } else {
           AppToast.show('Error', resp['message']);
         }

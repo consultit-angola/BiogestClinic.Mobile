@@ -1,3 +1,13 @@
+List<int> _readIntList(dynamic value) {
+  return (value as List?)
+          ?.map(
+            (item) => item is int ? item : int.tryParse(item?.toString() ?? ''),
+          )
+          .whereType<int>()
+          .toList() ??
+      [];
+}
+
 class AlarmDTO {
   final int? id;
   final String? name;
@@ -111,9 +121,7 @@ class AlarmDTO {
       sendToWorkstation: json['SendToWorkstation'] as bool?,
       sendByEmail: json['SendByEmail'] as bool?,
       sendBySMS: json['SendBySMS'] as bool?,
-      alarmUserIds: (json['AlarmUserIDs'] as List?)
-          ?.map((e) => e as int)
-          .toList(),
+      alarmUserIds: _readIntList(json['AlarmUserIDs']),
     );
   }
 

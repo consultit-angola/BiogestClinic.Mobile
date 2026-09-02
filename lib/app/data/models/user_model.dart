@@ -31,7 +31,13 @@ class UserDTO {
     phone: json['Phone'] ?? '',
     deleted: json['Deleted'] ?? false,
     groupId: json['GroupID'] ?? 0,
-    storeIds: (json['StoreIDs'] as List?)?.map((e) => e as int).toList(),
+    storeIds: (json['StoreIDs'] as List?)
+        ?.map(
+          (value) =>
+              value is int ? value : int.tryParse(value?.toString() ?? ''),
+        )
+        .whereType<int>()
+        .toList(),
     shortName: json['ShortName'] ?? '',
     groupName: json['GroupName'] ?? '',
   );

@@ -1,12 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'preferences.dart';
 
 class ApiConfig {
-  static const String socketServerUrl =
-      'https://biogestclinic.consultit-angola.com';
+  static String get socketServerUrl {
+    final configuredUrl = _normalizeUrl(dotenv.env['SOCKET_SERVER_URL'] ?? '');
+    return configuredUrl.isNotEmpty
+        ? configuredUrl
+        : 'https://biogestclinic.consultit-angola.com';
+  }
 
   static const String defaultApiName = String.fromEnvironment(
     'CLINIC_CODE',

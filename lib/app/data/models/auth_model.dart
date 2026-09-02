@@ -1,5 +1,15 @@
 import 'index.dart';
 
+List<int> _readIntList(dynamic value) {
+  return (value as List?)
+          ?.map(
+            (item) => item is int ? item : int.tryParse(item?.toString() ?? ''),
+          )
+          .whereType<int>()
+          .toList() ??
+      [];
+}
+
 class AuthResponseDTO {
   final String accessToken;
   final bool mustChangePassword;
@@ -33,11 +43,7 @@ class AuthResponseDTO {
         refreshTokenExpiration: json['RefreshTokenExpiration'] ?? '',
         userInfo: UserDTO.fromJson(json['UserInfo'] ?? {}),
         employee: EmployeeDTO.fromJson(json['Employee'] ?? {}),
-        activePermissions:
-            (json['ActivePermissions'] as List?)
-                ?.map((permission) => permission as int)
-                .toList() ??
-            [],
+        activePermissions: _readIntList(json['ActivePermissions']),
       );
 
   Map<String, dynamic> toJson() => {

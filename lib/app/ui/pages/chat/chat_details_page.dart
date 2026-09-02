@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../controllers/index.dart';
 import '../../../data/models/index.dart';
+import '../../../routes/index.dart';
 import '../../index.dart';
 
 class ChatDetailsPage extends GetView<ChatController> {
@@ -15,17 +16,46 @@ class ChatDetailsPage extends GetView<ChatController> {
 
   @override
   Widget build(BuildContext context) {
-    // Run after the first frame (only once)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.markConversationAsRead();
-    });
+    return Obx(() {
+      if (controller.destinationUser.value == null) {
+        final userID = _routeUserID;
+        if (userID != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            controller.loadRouteConversationIfNeeded(userID);
+          });
+          return const Scaffold(backgroundColor: CustomColors.backgroundColor);
+        }
 
-    return Scaffold(
-      backgroundColor: CustomColors.backgroundColor,
-      drawer: customDrawer(),
-      body: Column(children: [customAppbar(), buttonBack(), _buildChatArea()]),
-      bottomNavigationBar: customMenu(alignBottom: false),
-    );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (Get.currentRoute == Routes.chatDetails) {
+            Get.offNamed(Routes.chat);
+          }
+        });
+        return const Scaffold(backgroundColor: CustomColors.backgroundColor);
+      }
+
+      // Run after the first frame (only once)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.markConversationAsRead();
+      });
+
+      return Scaffold(
+        backgroundColor: CustomColors.backgroundColor,
+        drawer: customDrawer(),
+        body: Column(
+          children: [customAppbar(), buttonBack(), _buildChatArea()],
+        ),
+        bottomNavigationBar: customMenu(alignBottom: false),
+      );
+    });
+  }
+
+  int? get _routeUserID {
+    final arguments = Get.arguments;
+    if (arguments is! Map) return null;
+
+    final value = arguments['userID'];
+    return value is int ? value : int.tryParse(value?.toString() ?? '');
   }
 
   buttonBack() {

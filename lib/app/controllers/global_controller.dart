@@ -63,6 +63,7 @@ class GlobalController extends GetxController {
   bool _socketMessageRefreshPending = false;
   final Set<int> _pendingAttachmentChatIDs = <int>{};
   StreamSubscription<String>? _pushTokenSubscription;
+  StreamSubscription<PushNotificationTap>? _pushNotificationTapSubscription;
   int _pageRefreshCount = 0;
 
   bool hasPermission(int permission) {
@@ -142,9 +143,8 @@ class GlobalController extends GetxController {
     if (!_handlingExpiredSession) {
       _handlingExpiredSession = true;
       stopTimer();
-      Get.offAllNamed(Routes.login);
-      await Future<void>.delayed(Get.defaultTransitionDuration);
       await clearSession(clearPreferences: true);
+      Get.offAllNamed(Routes.login);
       AppToast.show(
         'Sessão terminada',
         'A sua sessão foi encerrada noutro dispositivo.',
@@ -284,11 +284,97 @@ class GlobalController extends GetxController {
       _pref.tokenFCM = token;
       unawaited(_registerPushDevice(token: token));
     });
+    await _pushNotificationTapSubscription?.cancel();
+    _pushNotificationTapSubscription = _pushNotificationService.notificationTaps
+        .listen((tap) {
+          unawaited(openPushNotificationConversation(tap));
+        });
 
     final token = await _pushNotificationService.requestPermissionAndGetToken();
     if (token != null && token.isNotEmpty) {
       _pref.tokenFCM = token;
     }
+  }
+
+  Future<void> openInitialPushNotificationConversation() async {
+    final tap = _pushNotificationService.consumeInitialNotificationTap();
+    if (tap == null) return;
+
+    await openPushNotificationConversation(tap);
+  }
+
+  Future<void> openPushNotificationConversation(PushNotificationTap tap) async {
+    if (!isAuthenticated.value) return;
+
+    if (!Get.isRegistered<ChatController>()) {
+      Get.put(ChatController());
+    }
+
+    final chatController = ChatController.to;
+    final notificationUserID = tap.conversationUserID;
+    await Future.wait([
+      chatController.getUsers(forceReload: true, showLoading: false),
+      if (notificationUserID != null && notificationUserID > 0)
+        getMessages(onlyUnread: false, userID: notificationUserID),
+      getMessages(),
+    ]);
+
+    final conversationUserID = _resolvePushNotificationConversationUserID(tap);
+    if (conversationUserID == null || conversationUserID <= 0) {
+      Get.toNamed(Routes.chat);
+      return;
+    }
+
+    await getMessages(onlyUnread: false, userID: conversationUserID);
+
+    final user =
+        users.firstWhereOrNull((user) => user.id == conversationUserID) ??
+        UserDTO(
+          id: conversationUserID,
+          login: '',
+          name: '',
+          email: '',
+          phone: '',
+          deleted: false,
+          groupId: 0,
+          shortName: '',
+          groupName: '',
+        );
+
+    chatController.destinationUser.value = user;
+    chatController.markConversationAsRead();
+    Get.toNamed(Routes.chatDetails, arguments: {'userID': conversationUserID});
+  }
+
+  int? _resolvePushNotificationConversationUserID(PushNotificationTap tap) {
+    final candidateIDs = [tap.senderID, tap.chatID].whereType<int>().toList();
+
+    for (final candidateID in candidateIDs) {
+      if (candidateID > 0) {
+        return candidateID;
+      }
+    }
+
+    final currentUserID = authenticatedUser.value?.id;
+    final messageID = tap.messageID;
+    if (currentUserID != null && messageID != null) {
+      for (final messagesList in messages.values) {
+        final message = messagesList.firstWhereOrNull(
+          (message) => message.id == messageID,
+        );
+        if (message == null) continue;
+
+        return message.destinationUserID == currentUserID
+            ? message.creationUserID
+            : message.destinationUserID;
+      }
+    }
+
+    if (pendingConversations.value == 1 && newMessages.length == 1) {
+      return newMessages.keys.first;
+    }
+
+    return null;
   }
 
   Future<void> _registerPushDevice({String? token}) async {
@@ -380,6 +466,8 @@ class GlobalController extends GetxController {
     }
     await _pushTokenSubscription?.cancel();
     _pushTokenSubscription = null;
+    await _pushNotificationTapSubscription?.cancel();
+    _pushNotificationTapSubscription = null;
     _notificationSocketService.disconnect();
     _pendingAttachmentChatIDs.clear();
     _socketMessageRefreshPending = false;
@@ -470,11 +558,8 @@ class GlobalController extends GetxController {
       EasyLoading.show();
       Map<String, dynamic> resp = await _provider.logout();
       if (resp['ok']) {
-        EasyLoading.dismiss();
-        stopTimer();
-        Get.offAllNamed(Routes.login);
-        await Future<void>.delayed(Get.defaultTransitionDuration);
         await clearSession(clearPreferences: true);
+        Get.offAllNamed(Routes.login);
       } else {
         AppToast.show('Error', resp['message']);
       }
