@@ -29,6 +29,7 @@ dependencies:
   searchfield: ^2.0.0
   shared_preferences: ^2.5.3
   socket_io_client: ^3.1.2
+  url_launcher: ^6.3.2
   fl_chart: ^1.2.0
   firebase_core: ^4.14.0
   firebase_messaging: ^16.6.0

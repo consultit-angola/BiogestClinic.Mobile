@@ -167,6 +167,153 @@ class Provider {
     }
   }
 
+  Future<Map<String, dynamic>> searchClientList({required String name}) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Client/Search');
+      final search = name.trim();
+      final clientID = int.tryParse(search);
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode({
+          'HideDeleted': true,
+          'OnlyClients': true,
+          'OnlyEntities': false,
+          if (clientID != null) 'ClientID': clientID,
+          if (clientID == null) 'ClientName': search,
+        }),
+      );
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final responseData = json.decode(resp.body) as Map<String, dynamic>;
+        final clients = (responseData['Clients'] as List? ?? [])
+            .map((item) => ClientDTO.fromJson(item as Map<String, dynamic>))
+            .where((client) => client.id > 0)
+            .toList();
+        return {'ok': true, 'data': clients};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <ClientDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getClientById(int id) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Client/$id');
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        return {'ok': true, 'data': ClientDTO.fromJson(data)};
+      }
+      if (resp.statusCode == 404) {
+        return {
+          'ok': false,
+          'notFound': true,
+          'message': 'Cliente não encontrado',
+        };
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getClientDigitalDocuments(int clientID) async {
+    try {
+      final uri = Uri.parse(
+        '$_baseApiUrl/DigitalDocument/GetClientDigitalDocuments',
+      ).replace(queryParameters: {'clientID': '$clientID'});
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as List;
+        final documents = data
+            .map(
+              (item) =>
+                  DigitalDocumentDTO.fromJson(item as Map<String, dynamic>),
+            )
+            .where((document) => document.id > 0)
+            .toList();
+        return {'ok': true, 'data': documents};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <DigitalDocumentDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getClientMedicalDocuments(int clientID) async {
+    try {
+      final uri = Uri.parse(
+        '$_baseApiUrl/ClientMedicalDocument',
+      ).replace(queryParameters: {'clientID': '$clientID'});
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as List;
+        final documents = data
+            .map(
+              (item) => ClientMedicalDocumentDTO.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .where((document) => document.id > 0)
+            .toList();
+        return {'ok': true, 'data': documents};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <ClientMedicalDocumentDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getAppointmentServices(int appointmentID) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/AppointmentService/GetByAppoitmentID')
+          .replace(
+            queryParameters: {
+              'appointmentID': '$appointmentID',
+              'withDeleted': 'false',
+            },
+          );
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        final services = (data['AppointmentServices'] as List? ?? [])
+            .map(
+              (item) =>
+                  AppointmentServiceDTO.fromJson(item as Map<String, dynamic>),
+            )
+            .where((service) => service.id > 0)
+            .toList();
+        return {'ok': true, 'data': services};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <AppointmentServiceDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
   Future<Map<String, dynamic>> getStores() async {
     try {
       // get /api/Store

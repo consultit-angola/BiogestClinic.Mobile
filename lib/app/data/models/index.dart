@@ -7,6 +7,8 @@ export 'attachment_model.dart';
 export 'auth_model.dart';
 export 'broadcast_channel_model.dart';
 export 'calendar_filter_option_model.dart';
+export 'client_model.dart';
+export 'clinical_record_model.dart';
 export 'employee_model.dart';
 export 'employee_absence_model.dart';
 export 'enum_entry_model.dart';

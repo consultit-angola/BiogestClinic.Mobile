@@ -38,6 +38,14 @@ Widget customMenu({bool alignBottom = true}) {
             _item(
               controller,
               3,
+              Icons.person_search_sharp,
+              'Clientes',
+              Routes.clientManagement,
+              visible: controller.globalController.canAccessClientManagement,
+            ),
+            _item(
+              controller,
+              4,
               Icons.dashboard_sharp,
               'Dashboard',
               Routes.dashboard,

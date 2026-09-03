@@ -8,6 +8,8 @@ abstract class Routes {
   static const calendar = '/calendar';
   static const alarm = '/alarm';
   static const activities = '/activities';
+  static const clientManagement = '/client-management';
+  static const clinicalRecord = '/clinical-record/:id';
   static const user = '/user';
   static const apiSettings = '/api-settings';
   static const dashboard = '/dashboard';

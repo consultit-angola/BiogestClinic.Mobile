@@ -7,6 +7,8 @@ export 'pages/app_update/app_update_page.dart';
 export 'pages/api_settings/api_settings_page.dart';
 export 'pages/chat/chat_page.dart';
 export 'pages/chat/chat_details_page.dart';
+export 'pages/clients/client_management_page.dart';
+export 'pages/clients/clinical_record_page.dart';
 export 'pages/user/user_page.dart';
 export 'pages/activities/activities_page.dart';
 export 'pages/calendar/calendar_page.dart';

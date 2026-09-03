@@ -72,22 +72,28 @@ Widget customDrawer() {
                     'Actividades',
                     () => navigate(Routes.activities, 2),
                   ),
+                if (globalController.canAccessClientManagement)
+                  _drawerItem(
+                    Icons.person_search_outlined,
+                    'Gestão de Clientes',
+                    () => navigate(Routes.clientManagement, 3),
+                  ),
                 if (globalController.canAccessDashboard)
                   _drawerItem(
                     Icons.dashboard_outlined,
                     'Dashboard',
-                    () => navigate(Routes.dashboard, 3),
+                    () => navigate(Routes.dashboard, 4),
                   ),
                 _drawerItem(
                   Icons.chat_bubble_outline,
                   'Chat',
-                  () => navigate(Routes.chat, 4),
+                  () => navigate(Routes.chat, -1),
                 ),
                 if (globalController.canAccessAlarms)
                   _drawerItem(
                     Icons.notifications_none,
                     'Alarmes',
-                    () => navigate(Routes.alarm, 4),
+                    () => navigate(Routes.alarm, -1),
                   ),
                 _drawerItem(
                   Icons.person_outline,

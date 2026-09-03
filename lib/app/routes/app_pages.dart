@@ -54,6 +54,22 @@ abstract class AppPages {
       ],
     ),
     GetPage(
+      name: Routes.clientManagement,
+      page: () => const ClientManagementPage(),
+      binding: ClientManagementBinding(),
+      middlewares: [
+        PermissionMiddleware(GlobalController.clientManagementPermission),
+      ],
+    ),
+    GetPage(
+      name: Routes.clinicalRecord,
+      page: () => const ClinicalRecordPage(),
+      binding: ClinicalRecordBinding(),
+      middlewares: [
+        PermissionMiddleware(GlobalController.clientManagementPermission),
+      ],
+    ),
+    GetPage(
       name: Routes.user,
       page: () => const UserPage(),
       binding: UserBinding(),

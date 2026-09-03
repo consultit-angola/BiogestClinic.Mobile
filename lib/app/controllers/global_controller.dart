@@ -21,6 +21,7 @@ class GlobalController extends GetxController {
   static const int viewOtherUsersSchedulePermission = 504;
   static const int globalConfigurationPermission = 25;
   static const int dashboardViewPermission = 39;
+  static const int clientManagementPermission = 351;
   static const int activityManagementPermission = 750;
 
   final Provider _provider = Provider();
@@ -81,6 +82,9 @@ class GlobalController extends GetxController {
   bool get canAccessDashboard => hasPermission(dashboardViewPermission);
 
   bool get canAccessActivities => hasPermission(activityManagementPermission);
+
+  bool get canAccessClientManagement =>
+      hasPermission(clientManagementPermission);
 
   List<int> getEnumEntryIdsByName(String enumKey, List<String> names) {
     return enumEntries[enumKey]
