@@ -327,6 +327,10 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
 
   Widget _digitalDocumentTile(DigitalDocumentDTO document) {
     return ListTile(
+      onTap: () => controller.openDigitalDocument(document),
+      splashColor: CustomColors.primaryLightColor.withValues(alpha: 0.18),
+      selectedTileColor: CustomColors.blueLightColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       leading: Icon(_documentIcon(document.dataTypeID)),
       title: Text(document.name.isNotEmpty ? document.name : 'Documento'),
       subtitle: Text(

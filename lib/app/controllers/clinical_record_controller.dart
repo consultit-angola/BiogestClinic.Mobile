@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:get/get.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
@@ -120,7 +125,15 @@ class ClinicalRecordController extends GetxController {
       AppToast.show('Erro', 'Não foi possível carregar documentos/imagens.');
       return;
     }
-    digitalDocuments.assignAll(response['data'] as List<DigitalDocumentDTO>);
+    final loadedDocuments = response['data'] as List<DigitalDocumentDTO>;
+    loadedDocuments.sort((left, right) {
+      final leftCreationTime = left.creationDate?.millisecondsSinceEpoch ?? 0;
+      final rightCreationTime = right.creationDate?.millisecondsSinceEpoch ?? 0;
+      final creationComparison = rightCreationTime.compareTo(leftCreationTime);
+      if (creationComparison != 0) return creationComparison;
+      return right.id.compareTo(left.id);
+    });
+    digitalDocuments.assignAll(loadedDocuments);
   }
 
   Future<void> loadMedicalDocuments() async {
@@ -134,9 +147,15 @@ class ClinicalRecordController extends GetxController {
       AppToast.show('Erro', 'Não foi possível carregar documentos médicos.');
       return;
     }
-    medicalDocuments.assignAll(
-      response['data'] as List<ClientMedicalDocumentDTO>,
-    );
+    final loadedDocuments = response['data'] as List<ClientMedicalDocumentDTO>;
+    loadedDocuments.sort((left, right) {
+      final leftCreationTime = left.creationDate?.millisecondsSinceEpoch ?? 0;
+      final rightCreationTime = right.creationDate?.millisecondsSinceEpoch ?? 0;
+      final creationComparison = rightCreationTime.compareTo(leftCreationTime);
+      if (creationComparison != 0) return creationComparison;
+      return right.id.compareTo(left.id);
+    });
+    medicalDocuments.assignAll(loadedDocuments);
   }
 
   bool _isOdontologyAppointment(AppointmentDTO appointment) {
@@ -147,5 +166,78 @@ class ClinicalRecordController extends GetxController {
         specialty.contains('endo') ||
         specialty.contains('period') ||
         specialty.contains('impl');
+  }
+
+  Future<void> openDigitalDocument(DigitalDocumentDTO document) async {
+    if (document.data.isEmpty) {
+      AppToast.show('Erro', 'Este documento não tem conteúdo para abrir.');
+      return;
+    }
+
+    try {
+      final bytes = base64Decode(_cleanBase64(document.data));
+      final tempDirectory = await getTemporaryDirectory();
+      final fileName = _resolveFileName(document, bytes);
+      final file = File(
+        '${tempDirectory.path}${Platform.pathSeparator}$fileName',
+      );
+      await file.writeAsBytes(bytes, flush: true);
+
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done) {
+        AppToast.show('Erro', result.message);
+      }
+    } catch (error) {
+      AppToast.show('Erro', 'Não foi possível abrir o documento: $error');
+    }
+  }
+
+  String _cleanBase64(String data) {
+    final commaIndex = data.indexOf(',');
+    if (data.startsWith('data:') && commaIndex >= 0) {
+      return data.substring(commaIndex + 1).replaceAll(RegExp(r'\s+'), '');
+    }
+    return data.replaceAll(RegExp(r'\s+'), '');
+  }
+
+  String _resolveFileName(DigitalDocumentDTO document, List<int> bytes) {
+    final safeName = (document.name.isNotEmpty ? document.name : 'documento')
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+    if (safeName.contains('.')) {
+      return safeName;
+    }
+    return '$safeName${_resolveFileExtension(document, bytes)}';
+  }
+
+  String _resolveFileExtension(DigitalDocumentDTO document, List<int> bytes) {
+    if (_isPdf(bytes)) return '.pdf';
+    if (_isPng(bytes)) return '.png';
+    if (_isJpeg(bytes)) return '.jpg';
+    if (document.dataTypeID == 2) return '.pdf';
+    return '.bin';
+  }
+
+  bool _isPdf(List<int> bytes) {
+    return bytes.length >= 5 &&
+        bytes[0] == 0x25 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x44 &&
+        bytes[3] == 0x46 &&
+        bytes[4] == 0x2d;
+  }
+
+  bool _isPng(List<int> bytes) {
+    return bytes.length >= 4 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4e &&
+        bytes[3] == 0x47;
+  }
+
+  bool _isJpeg(List<int> bytes) {
+    return bytes.length >= 3 &&
+        bytes[0] == 0xff &&
+        bytes[1] == 0xd8 &&
+        bytes[2] == 0xff;
   }
 }

@@ -1,33 +1,44 @@
 class DigitalDocumentDTO {
   final int id;
   final String name;
+  final String data;
+  final DateTime? creationDate;
   final String creationDateAsString;
   final String typeName;
   final int? dataTypeID;
+  final String dataFilePath;
 
   DigitalDocumentDTO({
     required this.id,
     required this.name,
+    required this.data,
+    this.creationDate,
     required this.creationDateAsString,
     required this.typeName,
     this.dataTypeID,
+    required this.dataFilePath,
   });
 
   factory DigitalDocumentDTO.fromJson(Map<String, dynamic> json) {
+    final creationDate = _dateTime(json['CreationDate']);
     return DigitalDocumentDTO(
       id: _int(json['ID']),
       name: _string(json['Name']),
+      data: _string(json['Data']),
+      creationDate: creationDate,
       creationDateAsString: _string(
-        json['CreationDateAsString'] ?? json['CreationDate'],
+        json['CreationDateAsString'] ?? creationDate?.toIso8601String(),
       ),
       typeName: _string((json['Type'] as Map?)?['Name']),
       dataTypeID: _nullableInt(json['DataTypeID'] ?? json['DataTypeEnum']),
+      dataFilePath: _string(json['DataFilePath']),
     );
   }
 }
 
 class ClientMedicalDocumentDTO {
   final int id;
+  final DateTime? creationDate;
   final String creationDateAsString;
   final String typeName;
   final int? typeEnum;
@@ -35,6 +46,7 @@ class ClientMedicalDocumentDTO {
 
   ClientMedicalDocumentDTO({
     required this.id,
+    this.creationDate,
     required this.creationDateAsString,
     required this.typeName,
     this.typeEnum,
@@ -42,10 +54,12 @@ class ClientMedicalDocumentDTO {
   });
 
   factory ClientMedicalDocumentDTO.fromJson(Map<String, dynamic> json) {
+    final creationDate = _dateTime(json['CreationDate']);
     return ClientMedicalDocumentDTO(
       id: _int(json['ID']),
+      creationDate: creationDate,
       creationDateAsString: _string(
-        json['CreationDateAsString'] ?? json['CreationDate'],
+        json['CreationDateAsString'] ?? creationDate?.toIso8601String(),
       ),
       typeName: _string((json['Type'] as Map?)?['Name']),
       typeEnum: _nullableInt(
@@ -105,3 +119,9 @@ int? _nullableInt(dynamic value) {
 }
 
 String _string(dynamic value) => value?.toString().trim() ?? '';
+
+DateTime? _dateTime(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  return DateTime.tryParse('$value');
+}

@@ -53,17 +53,58 @@ class ClientManagementPage extends GetView<ClientManagementController> {
     return Row(
       children: [
         Expanded(
-          child: TextField(
-            controller: controller.searchController,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (_) => controller.searchClients(),
-            decoration: const InputDecoration(
-              labelText: 'Nome ou ID do cliente',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(45)),
+          child: Container(
+            height: Get.height * 0.05,
+            padding: const EdgeInsets.all(2), // Border size
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(45)),
+              gradient: LinearGradient(
+                colors: [
+                  CustomColors.primaryDarkerColor,
+                  CustomColors.secondaryColor,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-              isDense: true,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(Get.context!).scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(43),
+              ),
+              child: TextField(
+                controller: controller.searchController,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => controller.searchClients(),
+                textAlignVertical: TextAlignVertical.center,
+                decoration: InputDecoration(
+                  labelText: ' Nome ou ID do cliente',
+                  floatingLabelStyle: TextStyle(
+                    backgroundColor: Theme.of(
+                      Get.context!,
+                    ).scaffoldBackgroundColor,
+                  ),
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(43)),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(43)),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(43)),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: false,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  isDense: true,
+                ),
+              ),
             ),
           ),
         ),
@@ -71,21 +112,44 @@ class ClientManagementPage extends GetView<ClientManagementController> {
         Obx(
           () => SizedBox(
             height: 48,
-            child: ElevatedButton.icon(
-              onPressed: controller.isLoading.value
-                  ? null
-                  : controller.searchClients,
-              icon: controller.isLoading.value
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.search),
-              label: const Text('Pesquisar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: CustomColors.primaryColor,
-                foregroundColor: Colors.white,
+            child: Container(
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(45)),
+                gradient: LinearGradient(
+                  colors: [
+                    CustomColors.primaryDarkerColor,
+                    CustomColors.secondaryColor,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+              child: ElevatedButton.icon(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : controller.searchClients,
+                icon: controller.isLoading.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.search),
+                label: const Text('Pesquisar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  disabledForegroundColor: Colors.white54,
+                  shadowColor: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 0,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: const StadiumBorder(),
+                ),
               ),
             ),
           ),
@@ -134,8 +198,15 @@ class ClientManagementPage extends GetView<ClientManagementController> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: const BoxDecoration(
-                color: CustomColors.secondaryColor,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                gradient: LinearGradient(
+                  colors: [
+                    CustomColors.primaryDarkerColor,
+                    CustomColors.secondaryColor,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
               ),
               child: const Text(
                 'Lista de Clientes',
@@ -165,25 +236,25 @@ class ClientManagementPage extends GetView<ClientManagementController> {
             icon: const Icon(Icons.more_vert),
             onSelected: (action) => _handleAction(action, client),
             itemBuilder: (_) => [
-              _menuItem(_ClientAction.edit, Icons.edit, 'Editar'),
-              _menuItem(
-                _ClientAction.currentAccount,
-                Icons.trending_up,
-                'Conta Corrente',
-              ),
-              _menuItem(_ClientAction.balance, Icons.attach_money, 'Saldo'),
-              _menuItem(_ClientAction.delete, Icons.delete, 'Eliminar'),
-              _menuItem(_ClientAction.merge, Icons.merge_type, 'Juntar'),
+              // _menuItem(_ClientAction.edit, Icons.edit, 'Editar'),
+              // _menuItem(
+              //   _ClientAction.currentAccount,
+              //   Icons.trending_up,
+              //   'Conta Corrente',
+              // ),
+              // _menuItem(_ClientAction.balance, Icons.attach_money, 'Saldo'),
+              // _menuItem(_ClientAction.delete, Icons.delete, 'Eliminar'),
+              // _menuItem(_ClientAction.merge, Icons.merge_type, 'Juntar'),
               _menuItem(
                 _ClientAction.clinicalRecord,
                 Icons.medical_services,
                 'Ficha Clínica',
               ),
-              _menuItem(
-                _ClientAction.followUp,
-                Icons.assignment,
-                'Acompanhamento',
-              ),
+              // _menuItem(
+              //   _ClientAction.followUp,
+              //   Icons.assignment,
+              //   'Acompanhamento',
+              // ),
               _menuItem(
                 _ClientAction.whatsApp,
                 Icons.chat_bubble_outline,
@@ -276,7 +347,16 @@ class ClientManagementPage extends GetView<ClientManagementController> {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: CustomColors.primaryColor,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    CustomColors.primaryDarkerColor,
+                    CustomColors.secondaryColor,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
               child: Row(
                 children: [
                   const Expanded(
