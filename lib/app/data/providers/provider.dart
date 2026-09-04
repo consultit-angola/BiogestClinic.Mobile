@@ -282,6 +282,91 @@ class Provider {
     }
   }
 
+  Future<Map<String, dynamic>> exportClientMedicalDocumentPdf(
+    ClientMedicalDocumentDTO document,
+  ) async {
+    final uri = _buildClientMedicalDocumentPdfUri(document);
+    if (uri == null) {
+      return {
+        'ok': false,
+        'unsupported': true,
+        'message': 'Tipo de documento médico sem relatório disponível.',
+      };
+    }
+
+    try {
+      final resp = await http.get(uri, headers: getHeaderJson());
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        return {'ok': true, 'data': resp.bodyBytes};
+      }
+      if (resp.statusCode == 404) {
+        return {
+          'ok': false,
+          'notFound': true,
+          'message': 'Relatório do documento médico não encontrado.',
+        };
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Uri? _buildClientMedicalDocumentPdfUri(ClientMedicalDocumentDTO document) {
+    final path = _getClientMedicalDocumentPdfPath(document.typeEnum);
+    if (path == null) return null;
+
+    final queryParameters = path == 'GetPDFBytes'
+        ? {'clientMedicalDocumentID': '${document.id}'}
+        : {
+            'toPDF': 'true',
+            'toExcel': 'false',
+            'clientMedicalDocumentID': '${document.id}',
+          };
+    return Uri.parse(
+      '$_baseApiUrl/ClientMedicalDocument/$path',
+    ).replace(queryParameters: queryParameters);
+  }
+
+  String? _getClientMedicalDocumentPdfPath(int? typeEnum) {
+    switch (typeEnum) {
+      case 200:
+      case 203:
+      case 204:
+        return 'ClientMedicalReportData/GetReport';
+      case 201:
+        return 'ClientTreatmentPlanReportData/GetReport';
+      case 205:
+        return 'GenericClientTreatmentPlanReportData/GetReport';
+      case 206:
+        return 'ClientMedicalReportData2/GetReport';
+      case 207:
+        return 'ClientProsthesisRequisitionReportData/GetReport';
+      case 208:
+        return 'ClientGenericExamRequisitionReportData/GetReport';
+      case 209:
+      case 210:
+      case 213:
+        return 'GetPDFBytes';
+      case 211:
+        return 'ClientWorkMedicineReportData/GetReport';
+      case 212:
+        return 'ClientExtendedPrescriptionReportData/GetReport';
+      case 214:
+      case 215:
+      case 216:
+        return 'ClientSurgeryReportData/GetConsentReport';
+      case 217:
+        return 'ClientSurgeryReportData/GetAutorizationReport';
+      case 218:
+        return 'ClientSurgicalProcedurePreparationReportData/GetReport';
+      default:
+        return null;
+    }
+  }
+
   Future<Map<String, dynamic>> getAppointmentServices(int appointmentID) async {
     try {
       final uri = Uri.parse('$_baseApiUrl/AppointmentService/GetByAppoitmentID')

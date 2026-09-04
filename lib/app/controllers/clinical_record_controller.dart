@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/models/index.dart';
 import '../data/providers/provider.dart';
+import '../routes/app_routes.dart';
 import '../ui/utils/app_toast.dart';
 import 'global_controller.dart';
 
@@ -17,13 +18,10 @@ class ClinicalRecordController extends GetxController {
   final client = Rxn<ClientDTO>();
   final recordType = ClinicalRecordType.specialties.obs;
   final appointments = <AppointmentDTO>[].obs;
-  final selectedAppointment = Rxn<AppointmentDTO>();
-  final appointmentServices = <AppointmentServiceDTO>[].obs;
   final digitalDocuments = <DigitalDocumentDTO>[].obs;
   final medicalDocuments = <ClientMedicalDocumentDTO>[].obs;
   final isLoadingClient = false.obs;
   final isLoadingHistory = false.obs;
-  final isLoadingServices = false.obs;
   final isLoadingDigitalDocuments = false.obs;
   final isLoadingMedicalDocuments = false.obs;
 
@@ -94,23 +92,12 @@ class ClinicalRecordController extends GetxController {
           ? loadedAppointments.where(_isOdontologyAppointment)
           : loadedAppointments,
     );
-    selectedAppointment.value = null;
-    appointmentServices.clear();
   }
 
-  Future<void> loadServices(AppointmentDTO appointment) async {
-    selectedAppointment.value = appointment;
-    isLoadingServices.value = true;
-    final response = await _provider.getAppointmentServices(appointment.id);
-    isLoadingServices.value = false;
-
-    if (await GlobalController.to.handleResponseError(response)) return;
-    if (response['ok'] != true) {
-      AppToast.show('Erro', 'Não foi possível carregar os serviços.');
-      return;
-    }
-    appointmentServices.assignAll(
-      response['data'] as List<AppointmentServiceDTO>,
+  void openAppointmentDetail(AppointmentDTO appointment) {
+    Get.toNamed(
+      Routes.clinicalRecordAppointmentDetail,
+      arguments: {'appointment': appointment},
     );
   }
 
@@ -156,6 +143,41 @@ class ClinicalRecordController extends GetxController {
       return right.id.compareTo(left.id);
     });
     medicalDocuments.assignAll(loadedDocuments);
+  }
+
+  Future<void> openMedicalDocumentPdf(ClientMedicalDocumentDTO document) async {
+    final response = await _provider.exportClientMedicalDocumentPdf(document);
+
+    if (await GlobalController.to.handleResponseError(response)) return;
+    if (response['ok'] != true) {
+      AppToast.show(
+        'Erro',
+        response['message']?.toString() ??
+            'Não foi possível imprimir o documento médico.',
+      );
+      return;
+    }
+
+    try {
+      final bytes = response['data'] as List<int>;
+      if (bytes.isEmpty) {
+        AppToast.show('Erro', 'O relatório não tem conteúdo para abrir.');
+        return;
+      }
+
+      final tempDirectory = await getTemporaryDirectory();
+      final file = File(
+        '${tempDirectory.path}${Platform.pathSeparator}${_resolveMedicalDocumentFileName(document)}',
+      );
+      await file.writeAsBytes(bytes, flush: true);
+
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done) {
+        AppToast.show('Erro', result.message);
+      }
+    } catch (error) {
+      AppToast.show('Erro', 'Não foi possível abrir o relatório: $error');
+    }
   }
 
   bool _isOdontologyAppointment(AppointmentDTO appointment) {
@@ -207,6 +229,14 @@ class ClinicalRecordController extends GetxController {
       return safeName;
     }
     return '$safeName${_resolveFileExtension(document, bytes)}';
+  }
+
+  String _resolveMedicalDocumentFileName(ClientMedicalDocumentDTO document) {
+    final name = document.typeName.isNotEmpty
+        ? document.typeName
+        : 'documento_medico_${document.id}';
+    final safeName = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+    return '$safeName.pdf';
   }
 
   String _resolveFileExtension(DigitalDocumentDTO document, List<int> bytes) {

@@ -104,7 +104,7 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Ficha Clí­nica ${controller.isOdontology ? '(Odontologia)' : ''}',
+                  'Ficha Clínica ${controller.isOdontology ? '(Odontologia)' : ''}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -118,24 +118,29 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
                 ? const Text('Carregando cliente...')
                 : Column(
                     children: [
+                      _clientDataRow('Cliente', client?.name, Icons.person),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const Icon(Icons.person, size: 18),
-                          const Text('Cliente: '),
-                          Text(
-                            client?.name ?? '-',
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text('ID: ${client?.stringID ?? '-'}'),
+                          _clientDataRow('ID', client?.stringID, null),
                           const SizedBox(width: 8),
                           if (client?.currentAgeAsString.isNotEmpty == true)
-                            Text('Idade: ${client!.currentAgeAsString}'),
+                            _clientDataRow(
+                              'Idade',
+                              client!.currentAgeAsString,
+                              null,
+                            ),
+                          const SizedBox(width: 8),
+                          if (client?.gender != null)
+                            _clientDataRow(
+                              'Sexo',
+                              client!.gender == 1
+                                  ? 'Masculino'
+                                  : client.gender == 2
+                                  ? 'Feminino'
+                                  : 'Outro',
+                              null,
+                            ),
                         ],
                       ),
                     ],
@@ -146,56 +151,27 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
     });
   }
 
+  Widget _clientDataRow(String label, String? value, IconData? icon) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (icon != null) Icon(icon, size: 18),
+        Text('$label: '),
+        Text(value ?? '-', style: const TextStyle(fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
+
   Widget _historyTab() {
     if (controller.isLoadingHistory.value) return _loading();
     if (controller.appointments.isEmpty) {
       return _empty('Sem consultas realizadas.');
     }
 
-    if (controller.isOdontology) {
-      return _sectionList(
-        title: 'Consultas realizadas',
-        children: controller.appointments.map(_appointmentTile).toList(),
-      );
-    }
-
-    return RefreshIndicator(
+    return _sectionList(
+      title: 'Consultas realizadas',
+      children: controller.appointments.map(_appointmentTile).toList(),
       onRefresh: controller.loadHistory,
-      child: ListView(
-        primary: false,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(10),
-        children: [
-          _panel(
-            title: 'Consultas realizadas',
-            child: Column(
-              children: controller.appointments.map(_appointmentTile).toList(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _panel(
-            title: 'Serviços',
-            child: Obx(() {
-              if (controller.isLoadingServices.value) {
-                return _loading(height: 90);
-              }
-              if (controller.selectedAppointment.value == null) {
-                return _emptyInline('Seleccione uma consulta.');
-              }
-              if (controller.appointmentServices.isEmpty) {
-                return _emptyInline(
-                  'Sem serviços para a consulta seleccionada.',
-                );
-              }
-              return Column(
-                children: controller.appointmentServices
-                    .map(_serviceTile)
-                    .toList(),
-              );
-            }),
-          ),
-        ],
-      ),
     );
   }
 
@@ -246,14 +222,10 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
   }
 
   Widget _appointmentTile(AppointmentDTO appointment) {
-    final isSelected =
-        controller.selectedAppointment.value?.id == appointment.id;
     return InkWell(
-      onTap: controller.isOdontology
-          ? null
-          : () => controller.loadServices(appointment),
+      onTap: () => controller.openAppointmentDetail(appointment),
       child: Container(
-        color: isSelected ? CustomColors.primaryLightColor : Colors.transparent,
+        color: Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,60 +239,26 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
                     ),
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: isSelected ? Colors.white : CustomColors.textColor,
+                      color: CustomColors.textColor,
                     ),
                   ),
                 ),
                 Text(
                   appointment.state?.name ?? '-',
-                  style: TextStyle(
-                    color: isSelected
-                        ? Colors.white
-                        : CustomColors.mutedTextColor,
-                  ),
+                  style: TextStyle(color: CustomColors.mutedTextColor),
                 ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, size: 18),
               ],
             ),
             const SizedBox(height: 4),
-            _mutedLine(
-              'Médico',
-              appointment.employeeName,
-              selected: isSelected,
-            ),
-            _mutedLine(
-              'Especialidade',
-              appointment.medicalSpecialty?.name,
-              selected: isSelected,
-            ),
-            _mutedLine('Sala', appointment.roomName, selected: isSelected),
+            _mutedLine('Médico', appointment.employeeName),
+            _mutedLine('Especialidade', appointment.medicalSpecialty?.name),
+            _mutedLine('Sala', appointment.roomName),
             if (appointment.observations?.isNotEmpty == true)
-              _mutedLine(
-                'Observações',
-                appointment.observations,
-                selected: isSelected,
-              ),
+              _mutedLine('Observações', appointment.observations),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _serviceTile(AppointmentServiceDTO service) {
-    return ListTile(
-      dense: true,
-      title: Text(
-        service.serviceCodeAndName.isNotEmpty
-            ? service.serviceCodeAndName
-            : '-',
-        style: const TextStyle(fontWeight: FontWeight.w700),
-      ),
-      subtitle: Text(
-        [
-          if (service.dateAsString.isNotEmpty) service.dateAsString,
-          if (service.doctor.isNotEmpty) service.doctor,
-          if (service.roomName.isNotEmpty) service.roomName,
-          'Facturado: ${service.billed}',
-        ].join(' | '),
       ),
     );
   }
@@ -345,11 +283,20 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
 
   Widget _medicalDocumentTile(ClientMedicalDocumentDTO document) {
     return ListTile(
+      onTap: () => controller.openMedicalDocumentPdf(document),
+      selectedTileColor: CustomColors.blueLightColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       leading: const Icon(Icons.description_outlined),
-      title: Text(
-        document.typeName.isNotEmpty
-            ? document.typeName
-            : 'Documento médico ${document.typeEnum ?? ''}',
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ID: ${document.id}'),
+          Text(
+            document.typeName.isNotEmpty
+                ? document.typeName
+                : 'Documento médico ${document.typeEnum ?? ''}',
+          ),
+        ],
       ),
       subtitle: Text(document.creationDateAsString),
     );
@@ -410,16 +357,6 @@ class ClinicalRecordPage extends GetView<ClinicalRecordController> {
           style: const TextStyle(color: CustomColors.mutedTextColor),
           textAlign: TextAlign.center,
         ),
-      ),
-    );
-  }
-
-  Widget _emptyInline(String text) {
-    return Padding(
-      padding: const EdgeInsets.all(18),
-      child: Text(
-        text,
-        style: const TextStyle(color: CustomColors.mutedTextColor),
       ),
     );
   }

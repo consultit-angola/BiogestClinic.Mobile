@@ -70,6 +70,14 @@ abstract class AppPages {
       ],
     ),
     GetPage(
+      name: Routes.clinicalRecordAppointmentDetail,
+      page: () => const ClinicalRecordAppointmentDetailPage(),
+      binding: ClinicalRecordAppointmentDetailBinding(),
+      middlewares: [
+        PermissionMiddleware(GlobalController.clientManagementPermission),
+      ],
+    ),
+    GetPage(
       name: Routes.user,
       page: () => const UserPage(),
       binding: UserBinding(),
