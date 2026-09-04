@@ -18,6 +18,7 @@ class GlobalController extends GetxController {
   static GlobalController get to => Get.find<GlobalController>();
 
   static const int appointmentScheduleManagementPermission = 500;
+  static const int appointmentScheduleCreatePermission = 501;
   static const int viewOtherUsersSchedulePermission = 504;
   static const int globalConfigurationPermission = 25;
   static const int dashboardViewPermission = 39;
@@ -73,6 +74,9 @@ class GlobalController extends GetxController {
 
   bool get canAccessAppointmentCalendar =>
       hasPermission(appointmentScheduleManagementPermission);
+
+  bool get canCreateAppointment =>
+      hasPermission(appointmentScheduleCreatePermission);
 
   bool get canViewOtherUsersAppointments =>
       hasPermission(viewOtherUsersSchedulePermission);

@@ -16,6 +16,8 @@ export 'message_model.dart';
 export 'refresh_token_model.dart';
 export 'room_model.dart';
 export 'services_model.dart';
+export 'service_option_model.dart';
+export 'service_tree_node_model.dart';
 export 'specialty_model.dart';
 export 'stock_model.dart';
 export 'store_model.dart';

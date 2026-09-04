@@ -1,5 +1,6 @@
 export 'activities_binding.dart';
 export 'alarm_binding.dart';
+export 'appointment_create_binding.dart';
 export 'calendar_binding.dart';
 export 'chat_binding.dart';
 export 'client_management_binding.dart';

@@ -72,6 +72,12 @@ class ClientMedicalDocumentDTO {
 
 class AppointmentServiceDTO {
   final int id;
+  final int? serviceID;
+  final int? appointmentID;
+  final int? source;
+  final int? roomID;
+  final int? employeeID;
+  final num? quantityValue;
   final String dateAsString;
   final String tableName;
   final String serviceCodeAndName;
@@ -81,9 +87,16 @@ class AppointmentServiceDTO {
   final String billed;
   final String storeName;
   final String roomName;
+  final Map<String, dynamic> raw;
 
   AppointmentServiceDTO({
     required this.id,
+    this.serviceID,
+    this.appointmentID,
+    this.source,
+    this.roomID,
+    this.employeeID,
+    this.quantityValue,
     required this.dateAsString,
     required this.tableName,
     required this.serviceCodeAndName,
@@ -93,11 +106,18 @@ class AppointmentServiceDTO {
     required this.billed,
     required this.storeName,
     required this.roomName,
+    this.raw = const {},
   });
 
   factory AppointmentServiceDTO.fromJson(Map<String, dynamic> json) {
     return AppointmentServiceDTO(
       id: _int(json['ID']),
+      serviceID: _nullableInt(json['ServiceID']),
+      appointmentID: _nullableInt(json['AppointmentID']),
+      source: _nullableInt(json['Source']),
+      roomID: _nullableInt(json['RoomID']),
+      employeeID: _nullableInt(json['EmployeeID']),
+      quantityValue: _num(json['Quantity']),
       dateAsString: _string(json['DateAsString'] ?? json['Date']),
       tableName: _string(json['ServiceGroupCodeAndName']),
       serviceCodeAndName: _string(json['ServiceCodeAndName']),
@@ -107,7 +127,24 @@ class AppointmentServiceDTO {
       billed: json['IsBilled'] == true ? 'Sim' : 'Não',
       storeName: _string(json['StoreName']),
       roomName: _string(json['RoomName']),
+      raw: Map<String, dynamic>.from(json),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    final data = Map<String, dynamic>.from(raw);
+    data['ID'] = id;
+    if (serviceID != null) data['ServiceID'] = serviceID;
+    if (appointmentID != null) data['AppointmentID'] = appointmentID;
+    if (source != null) data['Source'] = source;
+    if (roomID != null) data['RoomID'] = roomID;
+    if (employeeID != null) data['EmployeeID'] = employeeID;
+    if (quantityValue != null) data['Quantity'] = quantityValue;
+    if (serviceCodeAndName.isNotEmpty) {
+      data['ServiceCodeAndName'] = serviceCodeAndName;
+    }
+    if (observations.isNotEmpty) data['Observations'] = observations;
+    return data;
   }
 }
 
@@ -116,6 +153,11 @@ int _int(dynamic value) => value is int ? value : int.tryParse('$value') ?? 0;
 int? _nullableInt(dynamic value) {
   if (value == null) return null;
   return value is int ? value : int.tryParse('$value');
+}
+
+num? _num(dynamic value) {
+  if (value == null) return null;
+  return value is num ? value : num.tryParse('$value');
 }
 
 String _string(dynamic value) => value?.toString().trim() ?? '';

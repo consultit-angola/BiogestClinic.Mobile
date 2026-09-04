@@ -19,10 +19,11 @@ class AppointmentDTO {
   final String? employeeName;
   final int? roomID;
   final String? roomName;
+  final int? storeID;
   final String? storeName;
   final String? observations;
   final int? clientNotificationSentCount;
-  final List<ServicesDTO>? services;
+  final List<AppointmentServiceDTO>? services;
   final List<DiagnosticCodeDTO>? diagnosticCodes;
   final SpecialtyDTO? medicalSpecialty;
   final TypeDTO? type;
@@ -52,6 +53,7 @@ class AppointmentDTO {
     this.employeeName,
     this.roomID,
     this.roomName,
+    this.storeID,
     this.storeName,
     this.observations,
     this.clientNotificationSentCount,
@@ -99,12 +101,13 @@ class AppointmentDTO {
       employeeName: json['EmployeeName'],
       roomID: json['RoomID'],
       roomName: json['RoomName'],
+      storeID: json['StoreID'],
       storeName: json['StoreName'],
       observations: json['Observations'],
       clientNotificationSentCount: json['ClientNotificationSentCount'],
       services: json['Services'] != null
-          ? List<ServicesDTO>.from(
-              json['Services'].map((x) => ServicesDTO.fromJson(x)),
+          ? List<AppointmentServiceDTO>.from(
+              json['Services'].map((x) => AppointmentServiceDTO.fromJson(x)),
             )
           : null,
       diagnosticCodes: json['DiagnosticCodes'] != null
@@ -144,10 +147,11 @@ class AppointmentDTO {
     'EmployeeName': employeeName,
     'RoomID': roomID,
     'RoomName': roomName,
+    'StoreID': storeID,
     'StoreName': storeName,
     'Observations': observations,
     'ClientNotificationSentCount': clientNotificationSentCount,
-    'Services': services,
+    'Services': services?.map((service) => service.toJson()).toList(),
     'DiagnosticCodes': diagnosticCodes?.map((e) => e.toJson()).toList(),
     'MedicalSpecialty': medicalSpecialty?.toJson(),
     'Type': type?.toJson(),

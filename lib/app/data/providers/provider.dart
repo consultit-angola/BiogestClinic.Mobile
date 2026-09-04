@@ -76,7 +76,7 @@ class Provider {
         headers: getHeaderJson(),
         body: jsonEncode({
           'WithDeleted': false,
-          // 'OperationCode': 190,
+          'OperationCode': 190,
           if (search?.isNotEmpty == true) 'Name': search,
         }),
       );
@@ -141,6 +141,7 @@ class Provider {
         body: jsonEncode({
           'HideDeleted': true,
           'OnlyClients': true,
+          'OnlyEntities': false,
           'ClientName': name,
         }),
       );
@@ -390,6 +391,144 @@ class Provider {
       }
       if (resp.statusCode == 404) {
         return {'ok': true, 'data': <AppointmentServiceDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> searchAppointmentServiceOptions({
+    required String search,
+    List<int>? groupIDs,
+    int pageNumber = 1,
+    int pageSize = 100,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Service/SearchServicesPaged');
+      final body = {
+        'PageNumber': pageNumber,
+        'PageSize': pageSize,
+        'FullTextSearchKey': search.trim(),
+        'Filter': {
+          'WithDeleted': false,
+          'OnlySellableServices': false,
+          'GetServicePricesWithServicePriceTable': true,
+          'GroupIDs': groupIDs,
+        },
+      };
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        final services = (data['Items'] as List? ?? [])
+            .map(
+              (item) => ServiceOptionDTO.fromJson(item as Map<String, dynamic>),
+            )
+            .map(
+              (service) =>
+                  groupIDs == null || groupIDs.contains(service.groupID)
+                  ? service
+                  : service.copyWith(groupID: groupIDs.first),
+            )
+            .where((service) => service.id > 0 && service.name.isNotEmpty)
+            .toList();
+        return {
+          'ok': true,
+          'data': services,
+          'pageSize': data['PageSize'],
+          'totalCount': data['TotalCount'],
+        };
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <ServiceOptionDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> searchAppointmentServiceGroups() async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Service/Group/SearchGroupPaged');
+      final body = {
+        'PageNumber': 1,
+        'PageSize': 500,
+        'Filter': {'WithDeleted': false},
+      };
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        final groups = (data['Items'] as List? ?? [])
+            .map(
+              (item) =>
+                  ServiceGroupOptionDTO.fromJson(item as Map<String, dynamic>),
+            )
+            .where((group) => group.id > 0 && group.name.isNotEmpty)
+            .toList();
+        return {'ok': true, 'data': groups};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': <ServiceGroupOptionDTO>[]};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> createAppointmentService({
+    required int serviceID,
+    required int clientID,
+    required int appointmentType,
+    required int employeeID,
+    required int roomID,
+    int? priceTableID,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/AppointmentService/Create').replace(
+        queryParameters: {
+          'serviceID': '$serviceID',
+          'quantity': '1',
+          'clientID': '$clientID',
+          'appointmentType': '$appointmentType',
+          'employeeID': '$employeeID',
+          'roomID': '$roomID',
+          'canUseSpecialHour': 'true',
+          if (priceTableID != null) 'priceTableID': '$priceTableID',
+        },
+      );
+      final resp = await http.get(uri, headers: getHeaderJson());
+
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        final services = (data['AppointmentServices'] as List? ?? [])
+            .map(
+              (item) =>
+                  AppointmentServiceDTO.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
+        return {
+          'ok': true,
+          'data': services,
+          'messages': data['UserConfirmationMessages'],
+        };
       }
       return _httpError(resp);
     } on SocketException catch (_) {
@@ -770,6 +909,63 @@ class Provider {
       } else {
         return _httpError(resp);
       }
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> validateAppointmentSchedule(
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Appointment/ValidateSchedule');
+      final resp = await http.put(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        dynamic data;
+        if (resp.body.isNotEmpty) {
+          try {
+            data = json.decode(resp.body);
+          } catch (_) {
+            data = resp.body;
+          }
+        }
+        return {'ok': true, 'data': data};
+      }
+      if (resp.statusCode == 404) {
+        return {'ok': true, 'data': null};
+      }
+      return _httpError(resp);
+    } on SocketException catch (_) {
+      return _connectionError();
+    } catch (e) {
+      return {'ok': false, 'message': '$e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> createAppointment(
+    AppointmentDTO appointment,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseApiUrl/Appointment');
+      final body = appointment.toJson()..remove('ID');
+      final resp = await http.post(
+        uri,
+        headers: getHeaderJson(),
+        body: jsonEncode(body),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode <= 299) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        return {'ok': true, 'data': AppointmentDTO.fromJson(data)};
+      }
+      return _httpError(resp);
     } on SocketException catch (_) {
       return _connectionError();
     } catch (e) {

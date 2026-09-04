@@ -1,6 +1,7 @@
 export 'activities_controller.dart';
 export 'app_update_controller.dart';
 export 'alarm_controller.dart';
+export 'appointment_create_controller.dart';
 export 'calendar_controller.dart';
 export 'chat_controller.dart';
 export 'client_management_controller.dart';

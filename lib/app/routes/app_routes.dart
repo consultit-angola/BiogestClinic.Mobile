@@ -6,6 +6,7 @@ abstract class Routes {
   static const chat = '/chat';
   static const chatDetails = '/chat_details';
   static const calendar = '/calendar';
+  static const appointmentCreate = '/appointment/create';
   static const alarm = '/alarm';
   static const activities = '/activities';
   static const clientManagement = '/client-management';

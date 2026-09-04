@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neat_and_clean_calendar/flutter_neat_and_clean_calendar.dart';
 
 import '../../../controllers/index.dart';
+import '../../../routes/app_routes.dart';
 import '../../index.dart';
 
 class CalendarPage extends GetView<CalendarController> {
@@ -29,7 +30,23 @@ class CalendarPage extends GetView<CalendarController> {
                         height: constraints.maxHeight,
                         child: Column(
                           children: [
-                            calendarFilters(calendarController, context),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (calendarController
+                                    .globalController
+                                    .canCreateAppointment)
+                                  IconButton(
+                                    tooltip: 'Nova marcação',
+                                    icon: const Icon(Icons.add),
+                                    onPressed: () =>
+                                        Get.toNamed(Routes.appointmentCreate),
+                                  )
+                                else
+                                  const SizedBox(width: 48),
+                                calendarFilters(calendarController, context),
+                              ],
+                            ),
                             Expanded(child: Obx(calendar)),
                           ],
                         ),

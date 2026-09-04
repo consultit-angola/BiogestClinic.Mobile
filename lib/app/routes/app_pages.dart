@@ -46,6 +46,17 @@ abstract class AppPages {
       middlewares: [CalendarPermissionMiddleware()],
     ),
     GetPage(
+      name: Routes.appointmentCreate,
+      page: () => const CreateAppointmentPage(),
+      binding: AppointmentCreateBinding(),
+      middlewares: [
+        CalendarPermissionMiddleware(),
+        PermissionMiddleware(
+          GlobalController.appointmentScheduleCreatePermission,
+        ),
+      ],
+    ),
+    GetPage(
       name: Routes.activities,
       page: () => const ActivitiesPage(),
       binding: ActivitiesBinding(),

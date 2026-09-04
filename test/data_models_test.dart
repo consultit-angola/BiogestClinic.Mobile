@@ -110,6 +110,38 @@ void main() {
       );
     });
 
+    test('ServiceOptionDTO keeps group data and builds service tree nodes', () {
+      final group = ServiceGroupOptionDTO.fromJson({
+        'ID': 10,
+        'CodeAndName': 'Consultas',
+      });
+      final services = [
+        ServiceOptionDTO.fromJson({
+          'ID': 2,
+          'CodeAndName': 'LAB - Hemograma',
+          'Group': {'ID': 20, 'CodeAndName': 'Laboratorio'},
+        }),
+        ServiceOptionDTO.fromJson({
+          'ID': 1,
+          'CodeAndName': 'CONS - Consulta',
+          'Group': {'ID': 10, 'Name': 'Consultas'},
+        }),
+      ];
+
+      final nodes = buildServiceTreeNodes(services);
+
+      expect(group.id, 10);
+      expect(group.name, 'Consultas');
+      expect(nodes.map((node) => node.label), [
+        'Consultas',
+        'CONS - Consulta',
+        'Laboratorio',
+        'LAB - Hemograma',
+      ]);
+      expect(nodes.where((node) => node.isGroup), hasLength(2));
+      expect(nodes.where((node) => !node.isGroup), hasLength(2));
+    });
+
     test('UserDTO preserves StoreIDs', () {
       final user = UserDTO.fromJson({
         'ID': 4,

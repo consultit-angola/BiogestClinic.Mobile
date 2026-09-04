@@ -62,6 +62,14 @@ class CalendarController extends GetxController {
         CalendarFilterOptionDTO(
           id: employee.id,
           name: employee.name.isNotEmpty ? employee.name : employee.shortName,
+          roomID: employee.room.id > 0 ? employee.room.id : null,
+          roomStoreID: employee.room.store.id > 0
+              ? employee.room.store.id
+              : null,
+          allowedSpecialtyIDs: employee.allowedAppointmentExecutionSpecialties
+              .map((specialty) => specialty.id)
+              .where((id) => id > 0)
+              .toList(),
         ),
       ];
     }
